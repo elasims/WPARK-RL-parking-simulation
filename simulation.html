@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WPARK — RL Simulation</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #0a0c10;
+  --panel:   #111318;
+  --border:  #1e2230;
+  --border2: #2a2f42;
+  --text:    #e2e6f0;
+  --muted:   #5a6080;
+  --accent:  #4f8fff;
+  --accent2: #7c5cfc;
+  --green:   #2ecc8a;
+  --amber:   #f5a623;
+  --red:     #f0455a;
+  --medical: #ff6b9d;
+  --mono:    'Space Mono', monospace;
+  --sans:    'DM Sans', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; overflow-x: hidden; }
+
+/* Header */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 24px; border-bottom: 1px solid var(--border);
+  background: var(--panel); gap: 16px; flex-wrap: wrap;
+}
+.logo { font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: 0.15em; color: var(--accent); white-space: nowrap; }
+.logo span { color: var(--muted); }
+.clock { font-family: var(--mono); font-size: 20px; color: var(--accent); letter-spacing: 0.05em; }
+.header-stats { display: flex; gap: 22px; }
+.hstat { text-align: right; }
+.hstat-val { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--text); line-height: 1; }
+.hstat-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 2px; }
+.header-controls { display: flex; align-items: center; gap: 8px; }
+.mode-toggle { display: flex; background: #0d1117; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.mode-btn { flex: 1; padding: 7px 12px; font-size: 10px; font-family: var(--mono); letter-spacing: 0.06em; border: none; cursor: pointer; background: transparent; color: var(--muted); text-transform: uppercase; transition: all 0.15s; white-space: nowrap; }
+.mode-btn.active { background: var(--accent2); color: #fff; }
+.hbtn { padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border2); font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; cursor: pointer; text-transform: uppercase; transition: all 0.15s; white-space: nowrap; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-primary:hover { background: #6aa3ff; }
+.btn-secondary { background: transparent; color: var(--muted); }
+.btn-secondary:hover { background: var(--border); color: var(--text); }
+.btn-danger { background: transparent; color: var(--red); border-color: #3a1520; }
+.btn-danger:hover { background: #2a1018; }
+.speed-row { display: flex; align-items: center; gap: 8px; }
+.speed-label { font-size: 10px; color: var(--muted); font-family: var(--mono); white-space: nowrap; }
+input[type=range] { accent-color: var(--accent); height: 3px; width: 70px; }
+
+/* Layout */
+.main { display: grid; grid-template-columns: 1fr 300px; height: calc(100vh - 56px); }
+
+/* Car Park */
+.carpark-area { padding: 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+.floor-block { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.floor-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border); background: #13161e; }
+.floor-title { font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; }
+.floor-occ { font-family: var(--mono); font-size: 11px; color: var(--accent); }
+.floor-bar-wrap { width: 100px; height: 4px; background: var(--border2); border-radius: 2px; overflow: hidden; }
+.floor-bar { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.5s ease; }
+.zones-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); padding: 1px; }
+.zone-block { background: var(--panel); padding: 8px; }
+.zone-label { font-size: 9px; font-family: var(--mono); color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+.zone-label::after { content: ''; flex: 1; height: 1px; background: var(--border2); }
+.zone-shop { font-size: 8px; color: var(--muted); margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.spaces-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; }
+
+/* Spaces */
+.space {
+  aspect-ratio: 1.6; border-radius: 2px;
+  background: #141720; border: 1px solid #1a1e2a;
+  transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+  position: relative; overflow: hidden;
+}
+/* Empty */
+.space.empty { background: #141720; border-color: #1a1e2a; }
+/* Occupied — car is parked */
+.space.occupied { background: #1e3a5f; border-color: #2a5080; }
+.space.occupied::after { content: ''; position: absolute; inset: 2px; border-radius: 1px; background: #2a5a8a; opacity: 0.6; }
+/* Medical occupied */
+.space.occupied-medical { background: #3d1a2e; border-color: #7a2a50; }
+.space.occupied-medical::after { content: ''; position: absolute; inset: 2px; border-radius: 1px; background: #8a3060; opacity: 0.7; }
+/* Freshly assigned — bright flash then stays occupied colour */
+.space.flash-assign { background: var(--accent) !important; border-color: var(--accent) !important; box-shadow: 0 0 10px var(--accent); }
+.space.flash-medical { background: var(--medical) !important; border-color: var(--medical) !important; box-shadow: 0 0 10px var(--medical); }
+/* Target zone highlight */
+.space.target { border-color: var(--amber) !important; box-shadow: inset 0 0 0 1px rgba(245,166,35,0.4); }
+/* Departing */
+.space.departing { background: #2a1a10 !important; border-color: var(--amber) !important; transition: all 0.6s; }
+
+/* Sidebar */
+.sidebar { background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+.sidebar-section { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.section-title { font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
+.car-card { background: #0d1117; border: 1px solid var(--border2); border-radius: 7px; padding: 12px; }
+.car-shop { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 8px; line-height: 1.2; }
+.car-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.tag { font-size: 9px; font-family: var(--mono); padding: 3px 7px; border-radius: 3px; letter-spacing: 0.05em; }
+.tag-size   { background: #1a2a3a; color: #6ab0ff; border: 1px solid #2a4060; }
+.tag-dur    { background: #1a2a2a; color: #4ecdc4; border: 1px solid #2a4040; }
+.tag-urg    { background: #2a1a1a; color: #ff6b9d; border: 1px solid #40202a; }
+.tag-urg.normal { background: #1a2a1a; color: #2ecc8a; border: 1px solid #204020; }
+.tag-target { background: #1e1a2a; color: #a78bfa; border: 1px solid #2a2040; }
+.decision-box { background: #0d1117; border: 1px solid var(--border2); border-radius: 7px; padding: 12px; font-family: var(--mono); font-size: 11px; min-height: 75px; }
+.decision-space { font-size: 18px; font-weight: 700; color: var(--accent); margin-bottom: 6px; letter-spacing: 0.05em; }
+.decision-space.medical { color: var(--medical); }
+.decision-row { display: flex; justify-content: space-between; color: var(--muted); margin-bottom: 2px; font-size: 10px; }
+.decision-row span:last-child { color: var(--text); }
+.reward-flash { text-align: center; font-family: var(--mono); font-size: 20px; font-weight: 700; padding: 6px 0; min-height: 38px; }
+.reward-flash.positive { color: var(--green); }
+.reward-flash.negative { color: var(--red); }
+.metrics-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 7px; }
+.metric-card { background: #0d1117; border: 1px solid var(--border); border-radius: 5px; padding: 9px 11px; }
+.metric-val { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--text); line-height: 1; }
+.metric-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-top: 3px; }
+.log-area { flex: 1; overflow-y: auto; padding: 10px 14px; }
+.log-item { display: flex; gap: 7px; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 10px; align-items: flex-start; animation: fadeIn 0.25s ease; }
+@keyframes fadeIn { from { opacity:0; transform: translateX(5px); } to { opacity:1; } }
+.log-time { font-family: var(--mono); color: var(--muted); font-size: 9px; min-width: 32px; padding-top: 1px; }
+.log-space { font-family: var(--mono); font-size: 10px; color: var(--accent); min-width: 55px; }
+.log-space.med { color: var(--medical); }
+.log-space.neg { color: var(--red); }
+.log-text { color: var(--muted); line-height: 1.4; flex: 1; }
+.log-text strong { color: var(--text); font-weight: 500; }
+.log-reward { font-family: var(--mono); font-size: 10px; }
+.log-reward.pos { color: var(--green); }
+.log-reward.neg { color: var(--red); }
+::-webkit-scrollbar { width: 3px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">W<span>PARK</span> — RL<span> SIM</span></div>
+  <div class="clock" id="clock">08:00</div>
+  <div class="header-stats">
+    <div class="hstat"><div class="hstat-val" id="h-assigned">0</div><div class="hstat-label">Assigned</div></div>
+    <div class="hstat"><div class="hstat-val" id="h-nav">—</div><div class="hstat-label">Avg Nav (m)</div></div>
+    <div class="hstat"><div class="hstat-val" id="h-prox">—</div><div class="hstat-label">Avg Prox</div></div>
+    <div class="hstat"><div class="hstat-val" id="h-reward">0</div><div class="hstat-label">Reward</div></div>
+    <div class="hstat"><div class="hstat-val" id="h-search">—</div><div class="hstat-label">Avg Search (m)</div></div>
+  </div>
+  <div class="header-controls">
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="btn-rl"     onclick="setMode('rl')">RL Agent</button>
+      <button class="mode-btn"        id="btn-greedy" onclick="setMode('greedy')">Greedy</button>
+      <button class="mode-btn"        id="btn-random" onclick="setMode('random')">Random</button>
+    </div>
+    <button class="hbtn btn-primary"    id="btn-start" onclick="toggleSim()">▶ Start</button>
+    <button class="hbtn btn-secondary"  onclick="stepOnce()">Step ›</button>
+    <button class="hbtn btn-danger"     onclick="resetSim()">↺</button>
+    <div class="speed-row">
+      <span class="speed-label">Speed</span>
+      <input type="range" min="1" max="5" value="2" id="speed-slider" oninput="setSpeed(this.value)">
+      <span class="speed-label" id="speed-label">×2</span>
+    </div>
+  </div>
+</header>
+
+<div class="main">
+  <div class="carpark-area" id="carpark-area"></div>
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="section-title">Incoming Car</div>
+      <div class="car-card">
+        <div class="car-shop" id="car-shop">—</div>
+        <div class="car-tags" id="car-tags"></div>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="section-title">Decision</div>
+      <div class="decision-box" id="decision-box"><div style="color:var(--muted);font-size:10px">Press Start…</div></div>
+      <div class="reward-flash" id="reward-flash"></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="section-title">Session Metrics</div>
+      <div class="metrics-grid">
+        <div class="metric-card"><div class="metric-val" id="m-assigned">0</div><div class="metric-label">Assigned</div></div>
+        <div class="metric-card"><div class="metric-val" id="m-rejected">0</div><div class="metric-label">Rejected</div></div>
+        <div class="metric-card"><div class="metric-val" id="m-medical">0</div><div class="metric-label">Medical OK</div></div>
+        <div class="metric-card"><div class="metric-val" id="m-occ">0%</div><div class="metric-label">Occupancy</div></div>
+        <div class="metric-card" style="grid-column:1/-1; border-color:var(--amber)"><div style="display:flex;align-items:baseline;gap:8px"><div class="metric-val" id="m-search" style="color:var(--amber)">—</div><div style="font-family:var(--mono);font-size:10px;color:var(--muted)">min avg</div></div><div class="metric-label">⏱ Avg time searching for space</div></div>
+      </div>
+    </div>
+    <div class="section-title" style="padding:12px 16px 0">Event Log</div>
+    <div class="log-area" id="log-area"></div>
+  </div>
+</div>
+
+<script>
+// ── Constants ────────────────────────────────────────────────────────────
+const FLOORS = [1,2,3], ZONES = ['North','East','South','West'];
+const SPZ = 15, TOTAL = 180, N_STEPS = 600;
+
+const SHOP_MAP = {
+  'Tesco Express':{floor:1,zone:'North'},'Boots Pharmacy':{floor:1,zone:'North'},'Costa Coffee':{floor:1,zone:'North'},
+  "McDonald's":{floor:1,zone:'East'},"Nando's":{floor:1,zone:'East'},'Subway':{floor:1,zone:'East'},'KFC':{floor:1,zone:'East'},
+  'Currys PC World':{floor:1,zone:'South'},'Apple Store':{floor:1,zone:'South'},'Samsung':{floor:1,zone:'South'},
+  'Marks & Spencer':{floor:1,zone:'West'},'Waitrose':{floor:1,zone:'West'},'Holland & Barrett':{floor:1,zone:'West'},
+  'Zara':{floor:2,zone:'North'},'H&M':{floor:2,zone:'North'},'Primark':{floor:2,zone:'North'},'Next':{floor:2,zone:'North'},
+  'Odeon Cinema':{floor:2,zone:'East'},'Vue Cinema':{floor:2,zone:'East'},
+  'JD Sports':{floor:2,zone:'South'},'Nike':{floor:2,zone:'South'},'Adidas':{floor:2,zone:'South'},'Foot Locker':{floor:2,zone:'South'},
+  'LEGO Store':{floor:2,zone:'West'},'Smyths Toys':{floor:2,zone:'West'},'Build-A-Bear':{floor:2,zone:'West'},
+  'IKEA':{floor:3,zone:'North'},'Dunelm':{floor:3,zone:'North'},'The Range':{floor:3,zone:'North'},
+  'Pure Gym':{floor:3,zone:'East'},'Fitness First':{floor:3,zone:'East'},
+  'B&Q':{floor:3,zone:'South'},'Wickes':{floor:3,zone:'South'},'Toolstation':{floor:3,zone:'South'},
+  'Staples':{floor:3,zone:'West'},'WHSmith':{floor:3,zone:'West'},'Ryman':{floor:3,zone:'West'},
+};
+const ALL_SHOPS = Object.keys(SHOP_MAP);
+
+// Duration in steps before a car leaves
+const DUR_STEPS = { Short: 8, Medium: 20, Long: 45 };
+
+// ── State ────────────────────────────────────────────────────────────────
+// occupancy[i] = 0 (empty) or remaining steps until departure
+let occupancy = new Int32Array(TOTAL);
+let isMedicalSpace = new Uint8Array(TOTAL); // track medical bays for colour
+let stepCount=0, hour=8, totalReward=0;
+let assigned=0, rejected=0, medicalServed=0;
+let navTimes=[], proxScores=[], searchTimes=[];
+let running=false, simInterval=null, speed=2, mode='rl';
+let lastAssigned=-1, lastTargetFloor=null, lastTargetZone=null;
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function spaceIdx(f,z,s){ return FLOORS.indexOf(f)*ZONES.length*SPZ + ZONES.indexOf(z)*SPZ + s; }
+function idxToSpace(i){ const spf=ZONES.length*SPZ, f=Math.floor(i/spf), r=i%spf, z=Math.floor(r/SPZ), s=r%SPZ; return {floor:FLOORS[f],zone:ZONES[z],slot:s}; }
+function zoneDist(z1,z2){ const p={North:0,East:1,South:2,West:3}; const d=Math.abs(p[z1]-p[z2]); return Math.min(d,4-d); }
+function proxScore(af,az,tf,tz){ return Math.min(5,Math.max(1,Math.abs(af-tf)*2+zoneDist(az,tz)+1)); }
+function navTime(af,az,tf,tz){ return Math.abs(af-tf)*2.0+zoneDist(az,tz)*1.5; }
+function freeList(){ const a=[]; for(let i=0;i<TOTAL;i++) if(!occupancy[i]) a.push(i); return a; }
+function wChoice(items,w){ let r=Math.random(),c=0; for(let i=0;i<items.length;i++){c+=w[i];if(r<c)return items[i];} return items[items.length-1]; }
+
+function randomCar(){
+  return {
+    shop: ALL_SHOPS[Math.floor(Math.random()*ALL_SHOPS.length)],
+    size: wChoice(['Small','Medium','Large'],[0.3,0.5,0.2]),
+    urgency: wChoice(['Non-urgent','Medical'],[0.92,0.08]),
+    duration: wChoice(['Short','Medium','Long'],[0.35,0.45,0.20])
+  };
+}
+
+// ── Agents ────────────────────────────────────────────────────────────────
+function agentRandom(car){
+  const f=freeList(); return f.length ? f[Math.floor(Math.random()*f.length)] : TOTAL;
+}
+
+function agentGreedy(car){
+  let f=freeList(); if(!f.length) return TOTAL;
+  const {floor:tf,zone:tz}=SHOP_MAP[car.shop];
+  if(car.urgency==='Medical'){ const f1=f.filter(i=>idxToSpace(i).floor===1); if(f1.length)f=f1; }
+  let best=f[0],bp=999,bf=999;
+  for(const i of f){ const {floor:af,zone:az}=idxToSpace(i); const p=proxScore(af,az,tf,tz); if(p<bp||(p===bp&&af<bf)){best=i;bp=p;bf=af;} }
+  return best;
+}
+
+function agentRL(car){
+  let f=freeList(); if(!f.length) return TOTAL;
+  const {floor:tf,zone:tz}=SHOP_MAP[car.shop];
+  if(car.urgency==='Medical'){ const f1=f.filter(i=>idxToSpace(i).floor===1); if(f1.length)f=f1; }
+  // Floor load
+  const fl=[0,1,2].map(fi=>{ let c=0,s=fi*ZONES.length*SPZ; for(let i=s;i<s+ZONES.length*SPZ;i++)c+=occupancy[i]>0?1:0; return c/(ZONES.length*SPZ); });
+  let best=f[0],bs=-Infinity;
+  for(const i of f){
+    const {floor:af,zone:az,slot}=idxToSpace(i);
+    const p=proxScore(af,az,tf,tz), nav=navTime(af,az,tf,tz);
+    let sc=0;
+    if(p<=2)sc+=5; else if(p===3)sc+=1; else sc-=3;
+    sc-=nav*0.03;
+    const op=fl[af-1]*100; if(op>80)sc-=(op-80)*0.05;
+    if(car.size==='Small'&&slot<10)sc+=2;
+    if(car.duration==='Short'&&(az==='North'||az==='East'))sc+=3;
+    sc+=(Math.random()-0.5)*0.3; // small policy noise
+    if(sc>bs){bs=sc;best=i;}
+  }
+  return best;
+}
+
+// ── Reward ────────────────────────────────────────────────────────────────
+function calcReward(action,car){
+  if(action===TOTAL) return {r:-5,nav:null,prox:null,floor:null,zone:null};
+  const {floor:af,zone:az,slot}=idxToSpace(action);
+  const {floor:tf,zone:tz}=SHOP_MAP[car.shop];
+  const p=proxScore(af,az,tf,tz), nav=navTime(af,az,tf,tz);
+  let r=0;
+  if(p<=2)r+=5; else if(p===3)r+=1; else r-=3;
+  r-=nav*0.03;
+  if(car.urgency==='Medical') r+=(af===1&&p<=2)?10:-8;
+  const spf=ZONES.length*SPZ, si=(af-1)*spf; let cnt=0;
+  for(let i=si;i<si+spf;i++) cnt+=occupancy[i]>0?1:0;
+  const op=cnt/spf*100; if(op>80)r-=(op-80)*0.05;
+  if(car.size==='Small'&&slot<10)r+=2;
+  if(car.duration==='Short'&&(az==='North'||az==='East'))r+=3;
+  return {r:Math.round(r*10)/10, nav, prox:p, floor:af, zone:az};
+}
+
+// ── DOM ───────────────────────────────────────────────────────────────────
+function buildGrid(){
+  const area=document.getElementById('carpark-area');
+  area.innerHTML='';
+  FLOORS.forEach(fl=>{
+    const block=document.createElement('div');
+    block.className='floor-block';
+    const zonesHTML=ZONES.map(z=>{
+      const shops=ALL_SHOPS.filter(s=>SHOP_MAP[s].floor===fl&&SHOP_MAP[s].zone===z).join(', ');
+      const spacesHTML=Array.from({length:SPZ},(_,s)=>`<div class="space empty" id="sp-${spaceIdx(fl,z,s)}"></div>`).join('');
+      return `<div class="zone-block"><div class="zone-label">${z}</div><div class="zone-shop">${shops}</div><div class="spaces-grid">${spacesHTML}</div></div>`;
+    }).join('');
+    block.innerHTML=`<div class="floor-header">
+      <span class="floor-title">Floor ${fl}</span>
+      <div class="floor-bar-wrap"><div class="floor-bar" id="fbar-${fl}" style="width:0%"></div></div>
+      <span class="floor-occ" id="focc-${fl}">0% · 0/${ZONES.length*SPZ}</span>
+    </div><div class="zones-row">${zonesHTML}</div>`;
+    area.appendChild(block);
+  });
+}
+
+function setSpaceClass(i, cls){
+  const el=document.getElementById(`sp-${i}`);
+  if(el) el.className='space '+cls;
+}
+
+function flashSpace(i, isMed){
+  const cls=isMed?'flash-medical':'flash-assign';
+  setSpaceClass(i, cls);
+  setTimeout(()=>{
+    // After flash, show as occupied
+    setSpaceClass(i, isMed?'occupied-medical':'occupied');
+  }, 600);
+}
+
+function clearTargetHighlight(){
+  if(!lastTargetFloor) return;
+  for(let s=0;s<SPZ;s++){
+    const i=spaceIdx(lastTargetFloor,lastTargetZone,s);
+    const el=document.getElementById(`sp-${i}`);
+    if(el && el.classList.contains('target')) el.classList.remove('target');
+  }
+}
+
+function highlightTargetZone(tf,tz,skipIdx){
+  for(let s=0;s<SPZ;s++){
+    const i=spaceIdx(tf,tz,s);
+    if(i===skipIdx) continue;
+    const el=document.getElementById(`sp-${i}`);
+    if(el && !occupancy[i]) el.classList.add('target');
+  }
+}
+
+function updateFloorBars(){
+  FLOORS.forEach((fl,fi)=>{
+    const spf=ZONES.length*SPZ, si=fi*spf;
+    let cnt=0; for(let i=si;i<si+spf;i++) cnt+=occupancy[i]>0?1:0;
+    const pct=Math.round(cnt/spf*100);
+    const bar=document.getElementById(`fbar-${fl}`);
+    if(bar){ bar.style.width=pct+'%'; bar.style.background=pct>80?'var(--red)':pct>60?'var(--amber)':'var(--accent)'; }
+    const occ=document.getElementById(`focc-${fl}`);
+    if(occ) occ.textContent=`${pct}% · ${cnt}/${spf}`;
+  });
+  const total=Array.from(occupancy).filter(v=>v>0).length;
+  document.getElementById('m-occ').textContent=Math.round(total/TOTAL*100)+'%';
+}
+
+// ── Simulation step ───────────────────────────────────────────────────────
+function doStep(){
+  if(stepCount>=N_STEPS){ stopSim(); return; }
+
+  // 1. Tick down all occupied spaces — depart when counter hits 0
+  for(let i=0;i<TOTAL;i++){
+    if(occupancy[i]>0){
+      occupancy[i]--;
+      if(occupancy[i]===0){
+        isMedicalSpace[i]=0;
+        setSpaceClass(i,'departing');
+        setTimeout(()=>setSpaceClass(i,'empty'), 500);
+      }
+    }
+  }
+  // 1b. Background top-up: keep occupancy ≥ 60% (background cars, not agent decisions)
+  const curOcc = Array.from(occupancy).filter(v=>v>0).length;
+  if(curOcc < TOTAL * 0.60){
+    const needed = Math.floor(TOTAL*0.62) - curOcc;
+    const empties = [];
+    for(let i=0;i<TOTAL;i++) if(!occupancy[i]) empties.push(i);
+    for(let k=0;k<Math.min(needed,empties.length,4);k++){
+      const idx = empties[Math.floor(Math.random()*empties.length)];
+      empties.splice(empties.indexOf(idx),1);
+      occupancy[idx] = 15 + Math.floor(Math.random()*30);
+      setSpaceClass(idx,'occupied');
+    }
+  }
+
+  // 2. New car arrives
+  const car=randomCar();
+  document.getElementById('car-shop').textContent=car.shop;
+  const tgt=SHOP_MAP[car.shop];
+  document.getElementById('car-tags').innerHTML=`
+    <span class="tag tag-size">${car.size}</span>
+    <span class="tag tag-dur">${car.duration}</span>
+    <span class="tag tag-urg ${car.urgency==='Non-urgent'?'normal':''}">${car.urgency}</span>
+    <span class="tag tag-target">F${tgt.floor} ${tgt.zone}</span>`;
+
+  // 3. Agent decides
+  const occAtDecision = Array.from(occupancy).filter(v=>v>0).length;
+  const occRate = occAtDecision / TOTAL;
+  // Search time: base 0.5 min, rises steeply above 70% occupancy
+  // At 60% occ → ~1.2 min, at 80% → ~3.5 min, at 95% → ~8 min
+  const searchTime = occRate < 0.5
+    ? 0.5
+    : parseFloat((0.5 + Math.pow((occRate - 0.4) * 3.5, 2.2)).toFixed(2));
+
+  let action;
+  if(mode==='rl') action=agentRL(car);
+  else if(mode==='greedy') action=agentGreedy(car);
+  else action=agentRandom(car);
+
+  const result=calcReward(action,car);
+  totalReward+=result.r;
+  if(action<TOTAL){ searchTimes.push(searchTime); }
+
+  // 4. Remove old target highlight, add new one
+  clearTargetHighlight();
+
+  if(action<TOTAL){
+    const durSteps=DUR_STEPS[car.duration]||15;
+    occupancy[action]=durSteps;
+    isMedicalSpace[action]=car.urgency==='Medical'?1:0;
+    flashSpace(action, car.urgency==='Medical');
+    assigned++;
+    if(result.nav!==null) navTimes.push(result.nav);
+    if(result.prox!==null) proxScores.push(result.prox);
+    if(car.urgency==='Medical'&&result.floor===1&&result.prox<=2) medicalServed++;
+    lastTargetFloor=tgt.floor; lastTargetZone=tgt.zone;
+    highlightTargetZone(tgt.floor, tgt.zone, action);
+  } else {
+    rejected++;
+    lastTargetFloor=null; lastTargetZone=null;
+  }
+
+  // 5. Decision panel
+  const box=document.getElementById('decision-box');
+  if(action===TOTAL){
+    box.innerHTML=`<div class="decision-space" style="color:var(--red)">REJECTED</div>
+      <div class="decision-row"><span>Free spaces</span><span>${freeList().length}</span></div>`;
+  } else {
+    const {floor:af,zone:az,slot}=idxToSpace(action);
+    box.innerHTML=`<div class="decision-space ${car.urgency==='Medical'?'medical':''}">F${af}-${az[0]}${String(slot+1).padStart(3,'0')}</div>
+      <div class="decision-row"><span>Floor</span><span>${af}</span></div>
+      <div class="decision-row"><span>Zone</span><span>${az}</span></div>
+      <div class="decision-row"><span>Proximity</span><span>${result.prox}/5</span></div>
+      <div class="decision-row"><span>Est. walk</span><span>${result.nav?.toFixed(1)} min</span></div>
+      <div class="decision-row"><span>Free left</span><span>${freeList().length}</span></div>
+      <div class="decision-row"><span>Search time</span><span style='color:var(--amber)'>${searchTime.toFixed(1)} min</span></div>`;
+  }
+
+  // 6. Reward flash
+  const rf=document.getElementById('reward-flash');
+  rf.className='reward-flash '+(result.r>=0?'positive':'negative');
+  rf.textContent=(result.r>=0?'+':'')+result.r.toFixed(1)+' pts';
+  setTimeout(()=>{rf.textContent='';rf.className='reward-flash';},1600);
+
+  // 7. Log
+  const logArea=document.getElementById('log-area');
+  const item=document.createElement('div');
+  item.className='log-item';
+  const t=`${String(hour).padStart(2,'0')}:${String(Math.floor(stepCount%60)).padStart(2,'0')}`;
+  const isMed=car.urgency==='Medical';
+  let sp,sc='log-space';
+  if(action===TOTAL){sp='REJECT';sc+=' neg';}
+  else{ const {floor:af,zone:az,slot}=idxToSpace(action); sp=`F${af}-${az[0]}${String(slot+1).padStart(3,'0')}`; if(isMed)sc+=' med'; }
+  item.innerHTML=`<span class="log-time">${t}</span><span class="${sc}">${sp}</span>
+    <span class="log-text"><strong>${car.shop}</strong> · ${car.size}${isMed?' 🚨':''}${action<TOTAL?' ⏱'+searchTime.toFixed(1)+'m':''}</span>
+    <span class="log-reward ${result.r>=0?'pos':'neg'}">${result.r>=0?'+':''}${result.r.toFixed(1)}</span>`;
+  logArea.insertBefore(item,logArea.firstChild);
+  if(logArea.children.length>80) logArea.removeChild(logArea.lastChild);
+
+  // 8. Stats
+  stepCount++;
+  hour=8+Math.floor(stepCount/N_STEPS*14);
+  updateFloorBars();
+  document.getElementById('clock').textContent=`${String(hour).padStart(2,'0')}:00`;
+  document.getElementById('h-assigned').textContent=assigned;
+  document.getElementById('h-nav').textContent=navTimes.length?(navTimes.reduce((a,b)=>a+b)/navTimes.length).toFixed(1):'—';
+  document.getElementById('h-prox').textContent=proxScores.length?(proxScores.reduce((a,b)=>a+b)/proxScores.length).toFixed(1):'—';
+  document.getElementById('h-reward').textContent=totalReward.toFixed(0);
+  const avgSearch=searchTimes.length?(searchTimes.reduce((a,b)=>a+b)/searchTimes.length).toFixed(1):'—';
+  document.getElementById('h-search').textContent=avgSearch;
+  document.getElementById('m-search').textContent=avgSearch;
+  document.getElementById('m-assigned').textContent=assigned;
+  document.getElementById('m-rejected').textContent=rejected;
+  document.getElementById('m-medical').textContent=medicalServed;
+}
+
+// ── Controls ──────────────────────────────────────────────────────────────
+const SPEEDS=[900,450,200,90,35];
+function toggleSim(){ running?stopSim():startSim(); }
+function startSim(){
+  running=true;
+  document.getElementById('btn-start').textContent='⏸ Pause';
+  document.getElementById('btn-start').className='hbtn btn-secondary';
+  simInterval=setInterval(doStep,SPEEDS[speed-1]);
+}
+function stopSim(){
+  running=false;
+  document.getElementById('btn-start').textContent='▶ Resume';
+  document.getElementById('btn-start').className='hbtn btn-primary';
+  clearInterval(simInterval);
+}
+function stepOnce(){ if(!running) doStep(); }
+function resetSim(){
+  stopSim();
+  occupancy=new Int32Array(TOTAL);
+  isMedicalSpace=new Uint8Array(TOTAL);
+  stepCount=0;hour=8;totalReward=0;assigned=0;rejected=0;medicalServed=0;
+  navTimes=[];proxScores=[];searchTimes=[];lastAssigned=-1;lastTargetFloor=null;lastTargetZone=null;
+  document.getElementById('btn-start').textContent='▶ Start';
+  document.getElementById('btn-start').className='hbtn btn-primary';
+  document.getElementById('reward-flash').textContent='';
+  document.getElementById('reward-flash').className='reward-flash';
+  document.getElementById('log-area').innerHTML='';
+  document.getElementById('decision-box').innerHTML='<div style="color:var(--muted);font-size:10px">Press Start…</div>';
+  document.getElementById('car-shop').textContent='—';
+  document.getElementById('car-tags').innerHTML='';
+  // Reset all spaces then prefill
+  for(let i=0;i<TOTAL;i++) setSpaceClass(i,'empty');
+  prefillParking();
+  document.getElementById('clock').textContent='08:00';
+  ['h-assigned','h-nav','h-prox','h-reward','h-search','m-assigned','m-rejected','m-medical'].forEach(id=>{
+    document.getElementById(id).textContent=(id.includes('nav')||id.includes('prox')||id.includes('search'))?'—':'0';
+  });
+  document.getElementById('m-occ').textContent='0%';
+  document.getElementById('m-search').textContent='—';
+}
+function setSpeed(v){
+  speed=parseInt(v);
+  document.getElementById('speed-label').textContent=`×${v}`;
+  if(running){clearInterval(simInterval);simInterval=setInterval(doStep,SPEEDS[speed-1]);}
+}
+function setMode(m){
+  mode=m;
+  ['rl','greedy','random'].forEach(x=>document.getElementById(`btn-${x}`).classList.toggle('active',x===m));
+}
+
+
+// ── Pre-fill parking lot to ~65% occupancy ───────────────────────────────
+function prefillParking(){
+  const target = Math.floor(TOTAL * 0.65);
+  const indices = Array.from({length:TOTAL},(_,i)=>i);
+  // Shuffle
+  for(let i=indices.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [indices[i],indices[j]]=[indices[j],indices[i]]; }
+  for(let k=0;k<target;k++){
+    const i=indices[k];
+    // Random long-ish stay so they don't all depart at once
+    occupancy[i] = 15 + Math.floor(Math.random()*40);
+    isMedicalSpace[i] = 0;
+    setSpaceClass(i,'occupied');
+  }
+  updateFloorBars();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+buildGrid();
+</script>
+</body>
+</html>
