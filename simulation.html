@@ -6,145 +6,280 @@
 <title>WPARK — RL Simulation</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg:      #0a0c10;
-  --panel:   #111318;
-  --border:  #1e2230;
-  --border2: #2a2f42;
-  --text:    #e2e6f0;
-  --muted:   #5a6080;
-  --accent:  #4f8fff;
-  --accent2: #7c5cfc;
-  --green:   #2ecc8a;
-  --amber:   #f5a623;
-  --red:     #f0455a;
-  --medical: #ff6b9d;
-  --mono:    'Space Mono', monospace;
-  --sans:    'DM Sans', sans-serif;
+:root{
+  --bg:#0a0c10;--panel:#111318;--border:#1e2230;--border2:#2a2f42;
+  --text:#e2e6f0;--muted:#5a6080;--accent:#4f8fff;--accent2:#7c5cfc;
+  --green:#2ecc8a;--amber:#f5a623;--red:#f0455a;--medical:#ff6b9d;
+  --mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;
+  --road:#0c1220;--kerb:#202e42;--mid-dash:#1e3050;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; overflow-x: hidden; }
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
 
-/* Header */
-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 11px 24px; border-bottom: 1px solid var(--border);
-  background: var(--panel); gap: 16px; flex-wrap: wrap;
+/* ─── Header ─── */
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);background:var(--panel);gap:12px;flex-wrap:wrap;}
+.logo{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.15em;color:var(--accent);white-space:nowrap;}
+.logo span{color:var(--muted);}
+.clock{font-family:var(--mono);font-size:20px;color:var(--accent);letter-spacing:.05em;}
+.header-stats{display:flex;gap:16px;}
+.hstat{text-align:right;}
+.hstat-val{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--text);line-height:1;}
+.hstat-label{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:2px;}
+.header-controls{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+.mode-toggle{display:flex;background:#0d1117;border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.mode-btn{flex:1;padding:6px 11px;font-size:10px;font-family:var(--mono);letter-spacing:.06em;border:none;cursor:pointer;background:transparent;color:var(--muted);text-transform:uppercase;transition:all .15s;white-space:nowrap;}
+.mode-btn.active{background:var(--accent2);color:#fff;}
+.hbtn{padding:7px 13px;border-radius:6px;border:1px solid var(--border2);font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.08em;cursor:pointer;text-transform:uppercase;transition:all .15s;white-space:nowrap;}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.btn-primary:hover{background:#6aa3ff;}
+.btn-secondary{background:transparent;color:var(--muted);}
+.btn-secondary:hover{background:var(--border);color:var(--text);}
+.btn-danger{background:transparent;color:var(--red);border-color:#3a1520;}
+.btn-danger:hover{background:#2a1018;}
+.btn-bench{background:#12101e;border-color:#4a3a80;color:#a78bfa;}
+.btn-bench:hover{background:#1a1530;}
+.speed-row{display:flex;align-items:center;gap:7px;}
+.speed-label{font-size:10px;color:var(--muted);font-family:var(--mono);white-space:nowrap;}
+input[type=range]{accent-color:var(--accent);height:3px;width:65px;}
+
+/* ─── Layout ─── */
+.main{display:grid;grid-template-columns:1fr 310px;height:calc(100vh - 52px);}
+.carpark-area{padding:10px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;}
+
+/* ─── Floor block ─── */
+.floor-block{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.floor-header{display:flex;align-items:center;justify-content:space-between;padding:6px 13px;border-bottom:1px solid var(--border);background:#13161e;}
+.floor-title{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;}
+.floor-occ{font-family:var(--mono);font-size:10px;color:var(--accent);}
+.floor-bar-wrap{width:80px;height:4px;background:var(--border2);border-radius:2px;overflow:hidden;}
+.floor-bar{height:100%;background:var(--accent);border-radius:2px;transition:width .5s;}
+.floor-map{background:#0d1018;}
+
+/* ─── Entry row — Floor 1 ─── */
+.entry-row{display:flex;align-items:stretch;height:20px;border-bottom:1px solid var(--kerb);}
+.gate{flex-shrink:0;width:64px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:7px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;gap:3px;}
+.gate.in{background:#07150a;border-right:1px solid #183526;color:var(--green);}
+.gate.out{background:#150707;border-left:1px solid #351818;color:var(--red);}
+/* Clean two-lane entry road — no text noise */
+.entry-road{
+  flex:1;background:var(--road);position:relative;
 }
-.logo { font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: 0.15em; color: var(--accent); white-space: nowrap; }
-.logo span { color: var(--muted); }
-.clock { font-family: var(--mono); font-size: 20px; color: var(--accent); letter-spacing: 0.05em; }
-.header-stats { display: flex; gap: 22px; }
-.hstat { text-align: right; }
-.hstat-val { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--text); line-height: 1; }
-.hstat-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 2px; }
-.header-controls { display: flex; align-items: center; gap: 8px; }
-.mode-toggle { display: flex; background: #0d1117; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
-.mode-btn { flex: 1; padding: 7px 12px; font-size: 10px; font-family: var(--mono); letter-spacing: 0.06em; border: none; cursor: pointer; background: transparent; color: var(--muted); text-transform: uppercase; transition: all 0.15s; white-space: nowrap; }
-.mode-btn.active { background: var(--accent2); color: #fff; }
-.hbtn { padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border2); font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; cursor: pointer; text-transform: uppercase; transition: all 0.15s; white-space: nowrap; }
-.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.btn-primary:hover { background: #6aa3ff; }
-.btn-secondary { background: transparent; color: var(--muted); }
-.btn-secondary:hover { background: var(--border); color: var(--text); }
-.btn-danger { background: transparent; color: var(--red); border-color: #3a1520; }
-.btn-danger:hover { background: #2a1018; }
-.speed-row { display: flex; align-items: center; gap: 8px; }
-.speed-label { font-size: 10px; color: var(--muted); font-family: var(--mono); white-space: nowrap; }
-input[type=range] { accent-color: var(--accent); height: 3px; width: 70px; }
-
-/* Layout */
-.main { display: grid; grid-template-columns: 1fr 300px; height: calc(100vh - 56px); }
-
-/* Car Park */
-.carpark-area { padding: 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
-.floor-block { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
-.floor-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border); background: #13161e; }
-.floor-title { font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; }
-.floor-occ { font-family: var(--mono); font-size: 11px; color: var(--accent); }
-.floor-bar-wrap { width: 100px; height: 4px; background: var(--border2); border-radius: 2px; overflow: hidden; }
-.floor-bar { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.5s ease; }
-.zones-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); padding: 1px; }
-.zone-block { background: var(--panel); padding: 8px; }
-.zone-label { font-size: 9px; font-family: var(--mono); color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
-.zone-label::after { content: ''; flex: 1; height: 1px; background: var(--border2); }
-.zone-shop { font-size: 8px; color: var(--muted); margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.spaces-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; }
-
-/* Spaces */
-.space {
-  aspect-ratio: 1.6; border-radius: 2px;
-  background: #141720; border: 1px solid #1a1e2a;
-  transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
-  position: relative; overflow: hidden;
+/* Single dashed centre line only */
+.entry-road::after{
+  content:'';position:absolute;left:0;right:0;top:50%;
+  border-top:1px dashed var(--mid-dash);
 }
-/* Empty */
-.space.empty { background: #141720; border-color: #1a1e2a; }
-/* Occupied — car is parked */
-.space.occupied { background: #1e3a5f; border-color: #2a5080; }
-.space.occupied::after { content: ''; position: absolute; inset: 2px; border-radius: 1px; background: #2a5a8a; opacity: 0.6; }
-/* Medical occupied */
-.space.occupied-medical { background: #3d1a2e; border-color: #7a2a50; }
-.space.occupied-medical::after { content: ''; position: absolute; inset: 2px; border-radius: 1px; background: #8a3060; opacity: 0.7; }
-/* Freshly assigned — bright flash then stays occupied colour */
-.space.flash-assign { background: var(--accent) !important; border-color: var(--accent) !important; box-shadow: 0 0 10px var(--accent); }
-.space.flash-medical { background: var(--medical) !important; border-color: var(--medical) !important; box-shadow: 0 0 10px var(--medical); }
-/* Target zone highlight */
-.space.target { border-color: var(--amber) !important; box-shadow: inset 0 0 0 1px rgba(245,166,35,0.4); }
-/* Departing */
-.space.departing { background: #2a1a10 !important; border-color: var(--amber) !important; transition: all 0.6s; }
 
-/* Sidebar */
-.sidebar { background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
-.sidebar-section { padding: 14px 16px; border-bottom: 1px solid var(--border); }
-.section-title { font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
-.car-card { background: #0d1117; border: 1px solid var(--border2); border-radius: 7px; padding: 12px; }
-.car-shop { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 8px; line-height: 1.2; }
-.car-tags { display: flex; flex-wrap: wrap; gap: 4px; }
-.tag { font-size: 9px; font-family: var(--mono); padding: 3px 7px; border-radius: 3px; letter-spacing: 0.05em; }
-.tag-size   { background: #1a2a3a; color: #6ab0ff; border: 1px solid #2a4060; }
-.tag-dur    { background: #1a2a2a; color: #4ecdc4; border: 1px solid #2a4040; }
-.tag-urg    { background: #2a1a1a; color: #ff6b9d; border: 1px solid #40202a; }
-.tag-urg.normal { background: #1a2a1a; color: #2ecc8a; border: 1px solid #204020; }
-.tag-target { background: #1e1a2a; color: #a78bfa; border: 1px solid #2a2040; }
-.decision-box { background: #0d1117; border: 1px solid var(--border2); border-radius: 7px; padding: 12px; font-family: var(--mono); font-size: 11px; min-height: 75px; }
-.decision-space { font-size: 18px; font-weight: 700; color: var(--accent); margin-bottom: 6px; letter-spacing: 0.05em; }
-.decision-space.medical { color: var(--medical); }
-.decision-row { display: flex; justify-content: space-between; color: var(--muted); margin-bottom: 2px; font-size: 10px; }
-.decision-row span:last-child { color: var(--text); }
-.reward-flash { text-align: center; font-family: var(--mono); font-size: 20px; font-weight: 700; padding: 6px 0; min-height: 38px; }
-.reward-flash.positive { color: var(--green); }
-.reward-flash.negative { color: var(--red); }
-.metrics-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 7px; }
-.metric-card { background: #0d1117; border: 1px solid var(--border); border-radius: 5px; padding: 9px 11px; }
-.metric-val { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--text); line-height: 1; }
-.metric-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-top: 3px; }
-.log-area { flex: 1; overflow-y: auto; padding: 10px 14px; }
-.log-item { display: flex; gap: 7px; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 10px; align-items: flex-start; animation: fadeIn 0.25s ease; }
-@keyframes fadeIn { from { opacity:0; transform: translateX(5px); } to { opacity:1; } }
-.log-time { font-family: var(--mono); color: var(--muted); font-size: 9px; min-width: 32px; padding-top: 1px; }
-.log-space { font-family: var(--mono); font-size: 10px; color: var(--accent); min-width: 55px; }
-.log-space.med { color: var(--medical); }
-.log-space.neg { color: var(--red); }
-.log-text { color: var(--muted); line-height: 1.4; flex: 1; }
-.log-text strong { color: var(--text); font-weight: 500; }
-.log-reward { font-family: var(--mono); font-size: 10px; }
-.log-reward.pos { color: var(--green); }
-.log-reward.neg { color: var(--red); }
-::-webkit-scrollbar { width: 3px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+/* ─── Ramp row — Floors 2 & 3 ─── */
+.ramp-row{
+  display:flex;align-items:stretch;height:20px;
+  border-bottom:1px solid var(--kerb);
+  background:#0e0c1a;
+}
+.ramp-portal{
+  flex-shrink:0;width:80px;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  font-family:var(--mono);font-size:7px;font-weight:700;letter-spacing:.07em;
+  text-transform:uppercase;color:#7c5cfc;
+  position:relative;
+}
+/* Subtle glow ring to signal teleport zone */
+.ramp-portal::before{
+  content:'';
+  position:absolute;inset:2px;
+  border-radius:4px;
+  border:1px solid rgba(124,92,252,.25);
+  box-shadow:0 0 6px rgba(124,92,252,.12);
+}
+.ramp-portal.entry{border-right:1px solid #2a1e50;}
+.ramp-portal.exit{border-left:1px solid #2a1e50;}
+/* Clean ramp connector road */
+.ramp-road{
+  flex:1;background:var(--road);position:relative;
+}
+.ramp-road::after{
+  content:'';position:absolute;left:0;right:0;top:50%;
+  border-top:1px dashed #1a2040;
+}
+
+/* ─── Main road — clean, no text ─── */
+.main-road{
+  height:16px;background:var(--road);
+  border-top:1px solid var(--kerb);border-bottom:1px solid var(--kerb);
+  position:relative;
+}
+.main-road::after{
+  content:'';position:absolute;left:0;right:0;top:50%;
+  border-top:1px dashed var(--mid-dash);
+}
+.road-label{
+  position:absolute;left:8px;top:50%;transform:translateY(-50%);
+  font-family:var(--mono);font-size:6px;color:#182030;
+  letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;
+}
+
+/* ─── Zone grid ─── */
+.zones-row{display:grid;grid-template-columns:repeat(4,1fr);background:var(--border);gap:1px;}
+.zone-block{background:var(--panel);display:flex;}
+/* Vertical aisle — thin clean road strip */
+.zone-aisle{
+  width:10px;flex-shrink:0;
+  background:var(--road);
+  border-right:1px solid var(--kerb);
+}
+.zone-aisle-return{
+  width:10px;flex-shrink:0;
+  background:var(--road);
+  border-left:1px solid var(--kerb);
+}
+.zone-inner{flex:1;padding:5px 5px 5px 3px;min-width:0;}
+.zone-label{font-size:8px;font-family:var(--mono);color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;display:flex;align-items:center;gap:4px;}
+.zone-label::after{content:'';flex:1;height:1px;background:var(--border2);}
+.zone-shop{font-size:7px;color:#3a4560;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.spaces-grid{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(3,1fr);gap:2px;}
+
+/* ─── Spaces ─── */
+.space{aspect-ratio:1.4;border-radius:2px;background:#141720;border:1px solid #1a1e2a;transition:background .3s,border-color .3s,box-shadow .3s;position:relative;overflow:hidden;}
+.space::before{content:'';position:absolute;left:0;top:0;bottom:0;width:1px;background:#1e2435;opacity:.4;}
+.space:first-child::before{display:none;}
+.space.empty{background:#141720;border-color:#1a1e2a;}
+.space.occupied{background:#1e3a5f;border-color:#2a5080;}
+.space.occupied::after{content:'';position:absolute;inset:2px;border-radius:1px;background:#2a5a8a;opacity:.6;}
+.space.occupied-medical{background:#3d1a2e;border-color:#7a2a50;}
+.space.occupied-medical::after{content:'';position:absolute;inset:2px;border-radius:1px;background:#8a3060;opacity:.7;}
+.space.occupied-fresh{background:#1a50a0;border-color:#3a90f0;}
+.space.occupied-fresh::after{content:'';position:absolute;inset:2px;border-radius:1px;background:#4aaaff;opacity:.8;}
+.space.flash-assign{background:var(--accent)!important;border-color:var(--accent)!important;box-shadow:0 0 8px var(--accent);}
+.space.flash-medical{background:var(--medical)!important;border-color:var(--medical)!important;box-shadow:0 0 8px var(--medical);}
+.space.departing{background:#2a1a10!important;border-color:#503020!important;transition:all .6s;}
+
+/* ─── Car dot ─── */
+.car-dot{
+  position:fixed;width:10px;height:6px;border-radius:2px;
+  pointer-events:none;z-index:9999;
+  box-shadow:0 0 5px currentColor;
+}
+.car-dot.normal{background:var(--accent);color:var(--accent);}
+.car-dot.medical{background:var(--medical);color:var(--medical);}
+
+/* ─── Teleport burst ─── */
+.teleport-burst{
+  position:fixed;
+  width:20px;height:20px;
+  border-radius:50%;
+  pointer-events:none;z-index:10000;
+  transform:translate(-50%,-50%);
+  animation:tpBurst .45s ease-out forwards;
+}
+@keyframes tpBurst{
+  0%  {opacity:1;box-shadow:0 0 0 2px rgba(124,92,252,.9),0 0 12px 4px rgba(124,92,252,.6);transform:translate(-50%,-50%) scale(.4);}
+  60% {opacity:.7;box-shadow:0 0 0 6px rgba(124,92,252,.4),0 0 20px 8px rgba(124,92,252,.3);transform:translate(-50%,-50%) scale(1.2);}
+  100%{opacity:0;box-shadow:0 0 0 10px rgba(124,92,252,0),0 0 30px 12px rgba(124,92,252,0);transform:translate(-50%,-50%) scale(1.6);}
+}
+
+/* ─── Sidebar ─── */
+.sidebar{background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.sidebar-section{padding:11px 14px;border-bottom:1px solid var(--border);}
+.section-title{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
+.car-card{background:#0d1117;border:1px solid var(--border2);border-radius:7px;padding:10px;}
+.car-shop{font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px;line-height:1.2;}
+.car-tags{display:flex;flex-wrap:wrap;gap:4px;}
+.tag{font-size:9px;font-family:var(--mono);padding:3px 7px;border-radius:3px;letter-spacing:.05em;}
+.tag-size{background:#1a2a3a;color:#6ab0ff;border:1px solid #2a4060;}
+.tag-dur{background:#1a2a2a;color:#4ecdc4;border:1px solid #2a4040;}
+.tag-urg{background:#2a1a1a;color:#ff6b9d;border:1px solid #40202a;}
+.tag-urg.normal{background:#1a2a1a;color:#2ecc8a;border:1px solid #204020;}
+.tag-target{background:#1e1a2a;color:#a78bfa;border:1px solid #2a2040;}
+.decision-box{background:#0d1117;border:1px solid var(--border2);border-radius:7px;padding:10px;font-family:var(--mono);font-size:10px;min-height:68px;}
+.decision-space{font-size:17px;font-weight:700;color:var(--accent);margin-bottom:5px;letter-spacing:.05em;}
+.decision-space.medical{color:var(--medical);}
+.decision-row{display:flex;justify-content:space-between;color:var(--muted);margin-bottom:2px;font-size:10px;}
+.decision-row span:last-child{color:var(--text);}
+.reward-flash{text-align:center;font-family:var(--mono);font-size:19px;font-weight:700;padding:4px 0;min-height:34px;}
+.reward-flash.positive{color:var(--green);}
+.reward-flash.negative{color:var(--red);}
+.metrics-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;}
+.metric-card{background:#0d1117;border:1px solid var(--border);border-radius:5px;padding:8px 10px;}
+.metric-val{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--text);line-height:1;}
+.metric-label{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-top:3px;}
+.log-area{flex:1;overflow-y:auto;padding:8px 12px;}
+.log-item{display:flex;gap:6px;padding:4px 0;border-bottom:1px solid var(--border);font-size:10px;align-items:flex-start;animation:fadeIn .2s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateX(4px)}to{opacity:1}}
+.log-time{font-family:var(--mono);color:var(--muted);font-size:9px;min-width:30px;padding-top:1px;}
+.log-space{font-family:var(--mono);font-size:10px;color:var(--accent);min-width:52px;}
+.log-space.med{color:var(--medical);}
+.log-space.neg{color:var(--red);}
+.log-text{color:var(--muted);line-height:1.4;flex:1;}
+.log-text strong{color:var(--text);font-weight:500;}
+.log-reward{font-family:var(--mono);font-size:10px;}
+.log-reward.pos{color:var(--green);}
+.log-reward.neg{color:var(--red);}
+
+/* ─── Benchmark panel (inline sidebar section, no overlay) ─── */
+.bench-panel{display:none;padding:11px 14px;border-bottom:1px solid var(--border);background:#0d0c14;}
+.bench-panel.show{display:block;}
+.bench-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.bench-title{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.15em;color:#a78bfa;text-transform:uppercase;}
+.bench-agent-label{
+  font-family:var(--mono);font-size:10px;font-weight:700;
+  padding:2px 8px;border-radius:4px;margin-bottom:8px;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.bench-agent-label.rl{background:rgba(79,143,255,.12);color:var(--accent);border:1px solid rgba(79,143,255,.25);}
+.bench-agent-label.greedy{background:rgba(46,204,138,.12);color:var(--green);border:1px solid rgba(46,204,138,.25);}
+.bench-agent-label.random{background:rgba(245,166,35,.12);color:var(--amber);border:1px solid rgba(245,166,35,.25);}
+.bench-timer-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.bench-timer{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--text);min-width:44px;}
+.bench-time-bar-wrap{flex:1;height:5px;background:#0d1117;border-radius:3px;overflow:hidden;border:1px solid var(--border);}
+.bench-time-bar{height:100%;border-radius:3px;transition:width .1s linear;}
+.bench-time-bar.rl{background:var(--accent);}
+.bench-time-bar.greedy{background:var(--green);}
+.bench-time-bar.random{background:var(--amber);}
+.bench-live-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:8px;}
+.bench-live-stat{background:#0d1117;border:1px solid var(--border);border-radius:4px;padding:5px 7px;}
+.bench-live-val{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--text);}
+.bench-live-lbl{font-size:7px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:1px;}
+
+/* Results table */
+.bench-results{display:none;margin-top:6px;}
+.bench-results.show{display:block;}
+.bench-table{width:100%;border-collapse:collapse;}
+.bench-table th{font-family:var(--mono);font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;padding:5px 6px;text-align:right;border-bottom:1px solid var(--border);}
+.bench-table th:first-child{text-align:left;}
+.bench-table td{font-family:var(--mono);font-size:11px;padding:6px 6px;border-bottom:1px solid var(--border);color:var(--text);text-align:right;}
+.bench-table td:first-child{text-align:left;font-size:10px;}
+.bench-table tr:last-child td{border-bottom:none;}
+.bench-table .win{color:var(--green)!important;font-weight:700;}
+.bench-table .rl-r td:first-child{color:var(--accent);}
+.bench-table .greedy-r td:first-child{color:var(--green);}
+.bench-table .random-r td:first-child{color:var(--amber);}
+.bench-close-row{display:flex;justify-content:flex-end;gap:6px;margin-top:8px;}
+
+/* Active agent badge in header during bench */
+.bench-badge{
+  font-family:var(--mono);font-size:9px;font-weight:700;padding:4px 9px;
+  border-radius:5px;letter-spacing:.07em;text-transform:uppercase;
+  display:none;
+}
+.bench-badge.show{display:inline-flex;align-items:center;gap:5px;}
+.bench-badge.rl{background:rgba(79,143,255,.2);color:var(--accent);border:1px solid rgba(79,143,255,.4);}
+.bench-badge.greedy{background:rgba(46,204,138,.2);color:var(--green);border:1px solid rgba(46,204,138,.4);}
+.bench-badge.random{background:rgba(245,166,35,.2);color:var(--amber);border:1px solid rgba(245,166,35,.4);}
+
+.hidden{display:none!important;}
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
 </style>
 </head>
 <body>
-
 <header>
   <div class="logo">W<span>PARK</span> — RL<span> SIM</span></div>
   <div class="clock" id="clock">08:00</div>
   <div class="header-stats">
     <div class="hstat"><div class="hstat-val" id="h-assigned">0</div><div class="hstat-label">Assigned</div></div>
-    <div class="hstat"><div class="hstat-val" id="h-nav">—</div><div class="hstat-label">Avg Nav (m)</div></div>
+    <div class="hstat"><div class="hstat-val" id="h-nav">—</div><div class="hstat-label">Avg Nav (mins)</div></div>
     <div class="hstat"><div class="hstat-val" id="h-prox">—</div><div class="hstat-label">Avg Prox</div></div>
     <div class="hstat"><div class="hstat-val" id="h-reward">0</div><div class="hstat-label">Reward</div></div>
-    <div class="hstat"><div class="hstat-val" id="h-search">—</div><div class="hstat-label">Avg Search (m)</div></div>
+    <div class="hstat"><div class="hstat-val" id="h-search">—</div><div class="hstat-label">Avg Search (mins)</div></div>
   </div>
   <div class="header-controls">
     <div class="mode-toggle">
@@ -152,9 +287,11 @@ input[type=range] { accent-color: var(--accent); height: 3px; width: 70px; }
       <button class="mode-btn"        id="btn-greedy" onclick="setMode('greedy')">Greedy</button>
       <button class="mode-btn"        id="btn-random" onclick="setMode('random')">Random</button>
     </div>
-    <button class="hbtn btn-primary"    id="btn-start" onclick="toggleSim()">▶ Start</button>
-    <button class="hbtn btn-secondary"  onclick="stepOnce()">Step ›</button>
-    <button class="hbtn btn-danger"     onclick="resetSim()">↺</button>
+    <div class="bench-badge" id="bench-badge">⏱ BENCHMARKING</div>
+    <button class="hbtn btn-primary"   id="btn-start" onclick="toggleSim()">▶ Start</button>
+    <button class="hbtn btn-secondary" onclick="stepOnce()">Burst ›</button>
+    <button class="hbtn btn-bench"     onclick="startBenchmark()">⏱ 10s Benchmark</button>
+    <button class="hbtn btn-danger"    onclick="resetSim()">↺</button>
     <div class="speed-row">
       <span class="speed-label">Speed</span>
       <input type="range" min="1" max="5" value="2" id="speed-slider" oninput="setSpeed(this.value)">
@@ -166,15 +303,44 @@ input[type=range] { accent-color: var(--accent); height: 3px; width: 70px; }
 <div class="main">
   <div class="carpark-area" id="carpark-area"></div>
   <div class="sidebar">
+
+    <!-- Benchmark panel (slides in at top of sidebar) -->
+    <div class="bench-panel" id="bench-panel">
+      <div class="bench-header">
+        <span class="bench-title">⏱ 10-Second Benchmark</span>
+        <button class="hbtn btn-danger" id="bench-cancel-btn" onclick="cancelBenchmark()" style="padding:3px 8px;font-size:9px;">✕ Cancel</button>
+      </div>
+      <div id="bench-running-block">
+        <div id="bench-agent-label" class="bench-agent-label rl">● RL Agent — Round 1/3</div>
+        <div class="bench-timer-row">
+          <div class="bench-timer" id="bench-timer-val">10.0</div>
+          <div class="bench-time-bar-wrap">
+            <div class="bench-time-bar rl" id="bench-time-bar" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="bench-live-stats">
+          <div class="bench-live-stat"><div class="bench-live-val" id="bl-pts">0</div><div class="bench-live-lbl">Points</div></div>
+          <div class="bench-live-stat"><div class="bench-live-val" id="bl-assigned">0</div><div class="bench-live-lbl">Assigned</div></div>
+          <div class="bench-live-stat"><div class="bench-live-val" id="bl-nav">—</div><div class="bench-live-lbl">Avg Nav</div></div>
+        </div>
+      </div>
+      <div class="bench-results" id="bench-results">
+        <table class="bench-table" id="bench-table"></table>
+        <div class="bench-close-row">
+          <button class="hbtn btn-secondary" onclick="closeBenchmark()" style="font-size:9px;padding:4px 10px;">Close</button>
+        </div>
+      </div>
+    </div>
+
     <div class="sidebar-section">
-      <div class="section-title">Incoming Car</div>
+      <div class="section-title">Last Car</div>
       <div class="car-card">
         <div class="car-shop" id="car-shop">—</div>
         <div class="car-tags" id="car-tags"></div>
       </div>
     </div>
     <div class="sidebar-section">
-      <div class="section-title">Decision</div>
+      <div class="section-title">Last Decision</div>
       <div class="decision-box" id="decision-box"><div style="color:var(--muted);font-size:10px">Press Start…</div></div>
       <div class="reward-flash" id="reward-flash"></div>
     </div>
@@ -185,20 +351,27 @@ input[type=range] { accent-color: var(--accent); height: 3px; width: 70px; }
         <div class="metric-card"><div class="metric-val" id="m-rejected">0</div><div class="metric-label">Rejected</div></div>
         <div class="metric-card"><div class="metric-val" id="m-medical">0</div><div class="metric-label">Medical OK</div></div>
         <div class="metric-card"><div class="metric-val" id="m-occ">0%</div><div class="metric-label">Occupancy</div></div>
-        <div class="metric-card" style="grid-column:1/-1; border-color:var(--amber)"><div style="display:flex;align-items:baseline;gap:8px"><div class="metric-val" id="m-search" style="color:var(--amber)">—</div><div style="font-family:var(--mono);font-size:10px;color:var(--muted)">min avg</div></div><div class="metric-label">⏱ Avg time searching for space</div></div>
+        <div class="metric-card" style="grid-column:1/-1;border-color:var(--amber)">
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <div class="metric-val" id="m-search" style="color:var(--amber)">—</div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">mins avg</div>
+          </div>
+          <div class="metric-label">⏱ Avg search time</div>
+        </div>
       </div>
     </div>
-    <div class="section-title" style="padding:12px 16px 0">Event Log</div>
+    <div class="section-title" style="padding:10px 14px 0">Event Log</div>
     <div class="log-area" id="log-area"></div>
   </div>
 </div>
 
 <script>
-// ── Constants ────────────────────────────────────────────────────────────
-const FLOORS = [1,2,3], ZONES = ['North','East','South','West'];
-const SPZ = 15, TOTAL = 180, N_STEPS = 600;
-
-const SHOP_MAP = {
+// ══════════════════════════════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════════════════════════════
+const FLOORS=[1,2,3],ZONES=['North','East','South','West'];
+const SPZ=15,TOTAL=180,N_STEPS=600;
+const SHOP_MAP={
   'Tesco Express':{floor:1,zone:'North'},'Boots Pharmacy':{floor:1,zone:'North'},'Costa Coffee':{floor:1,zone:'North'},
   "McDonald's":{floor:1,zone:'East'},"Nando's":{floor:1,zone:'East'},'Subway':{floor:1,zone:'East'},'KFC':{floor:1,zone:'East'},
   'Currys PC World':{floor:1,zone:'South'},'Apple Store':{floor:1,zone:'South'},'Samsung':{floor:1,zone:'South'},
@@ -212,274 +385,403 @@ const SHOP_MAP = {
   'B&Q':{floor:3,zone:'South'},'Wickes':{floor:3,zone:'South'},'Toolstation':{floor:3,zone:'South'},
   'Staples':{floor:3,zone:'West'},'WHSmith':{floor:3,zone:'West'},'Ryman':{floor:3,zone:'West'},
 };
-const ALL_SHOPS = Object.keys(SHOP_MAP);
+const ALL_SHOPS=Object.keys(SHOP_MAP);
+const DUR_STEPS={Short:8,Medium:20,Long:45};
 
-// Duration in steps before a car leaves
-const DUR_STEPS = { Short: 8, Medium: 20, Long: 45 };
+// ══════════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════════
+let occupancy=new Int32Array(TOTAL),isMedSpace=new Uint8Array(TOTAL);
+let stepCount=0,hour=8,totalReward=0,assigned=0,rejected=0,medicalServed=0;
+let navTimes=[],proxScores=[],searchTimes=[];
+let running=false,arrivalTimer=null,speed=2,mode='rl';
 
-// ── State ────────────────────────────────────────────────────────────────
-// occupancy[i] = 0 (empty) or remaining steps until departure
-let occupancy = new Int32Array(TOTAL);
-let isMedicalSpace = new Uint8Array(TOTAL); // track medical bays for colour
-let stepCount=0, hour=8, totalReward=0;
-let assigned=0, rejected=0, medicalServed=0;
-let navTimes=[], proxScores=[], searchTimes=[];
-let running=false, simInterval=null, speed=2, mode='rl';
-let lastAssigned=-1, lastTargetFloor=null, lastTargetZone=null;
+// ══════════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════════
+function spaceIdx(f,z,s){return FLOORS.indexOf(f)*ZONES.length*SPZ+ZONES.indexOf(z)*SPZ+s;}
+function idxToSpace(i){const spf=ZONES.length*SPZ,f=Math.floor(i/spf),r=i%spf,z=Math.floor(r/SPZ),s=r%SPZ;return{floor:FLOORS[f],zone:ZONES[z],slot:s};}
+function zoneDist(z1,z2){const p={North:0,East:1,South:2,West:3},d=Math.abs(p[z1]-p[z2]);return Math.min(d,4-d);}
+function proxScore(af,az,tf,tz){return Math.min(5,Math.max(1,Math.abs(af-tf)*2+zoneDist(az,tz)+1));}
+function navTime(af,az,tf,tz){return(Math.abs(af-tf)*2.0+zoneDist(az,tz)*1.5)*10;}
+function freeList(){const a=[];for(let i=0;i<TOTAL;i++)if(!occupancy[i])a.push(i);return a;}
+function wChoice(items,w){let r=Math.random(),c=0;for(let i=0;i<items.length;i++){c+=w[i];if(r<c)return items[i];}return items[items.length-1];}
+function randomCar(){return{shop:ALL_SHOPS[Math.floor(Math.random()*ALL_SHOPS.length)],size:wChoice(['Small','Medium','Large'],[.3,.5,.2]),urgency:wChoice(['Non-urgent','Medical'],[.92,.08]),duration:wChoice(['Short','Medium','Long'],[.35,.45,.20])};}
+function dist2d(a,b){return Math.hypot(b.x-a.x,b.y-a.y);}
+function carVelocity(){return 0.14+(speed-1)*0.12;}
 
-// ── Helpers ───────────────────────────────────────────────────────────────
-function spaceIdx(f,z,s){ return FLOORS.indexOf(f)*ZONES.length*SPZ + ZONES.indexOf(z)*SPZ + s; }
-function idxToSpace(i){ const spf=ZONES.length*SPZ, f=Math.floor(i/spf), r=i%spf, z=Math.floor(r/SPZ), s=r%SPZ; return {floor:FLOORS[f],zone:ZONES[z],slot:s}; }
-function zoneDist(z1,z2){ const p={North:0,East:1,South:2,West:3}; const d=Math.abs(p[z1]-p[z2]); return Math.min(d,4-d); }
-function proxScore(af,az,tf,tz){ return Math.min(5,Math.max(1,Math.abs(af-tf)*2+zoneDist(az,tz)+1)); }
-function navTime(af,az,tf,tz){ return Math.abs(af-tf)*2.0+zoneDist(az,tz)*1.5; }
-function freeList(){ const a=[]; for(let i=0;i<TOTAL;i++) if(!occupancy[i]) a.push(i); return a; }
-function wChoice(items,w){ let r=Math.random(),c=0; for(let i=0;i<items.length;i++){c+=w[i];if(r<c)return items[i];} return items[items.length-1]; }
-
-function randomCar(){
-  return {
-    shop: ALL_SHOPS[Math.floor(Math.random()*ALL_SHOPS.length)],
-    size: wChoice(['Small','Medium','Large'],[0.3,0.5,0.2]),
-    urgency: wChoice(['Non-urgent','Medical'],[0.92,0.08]),
-    duration: wChoice(['Short','Medium','Long'],[0.35,0.45,0.20])
-  };
-}
-
-// ── Agents ────────────────────────────────────────────────────────────────
-function agentRandom(car){
-  const f=freeList(); return f.length ? f[Math.floor(Math.random()*f.length)] : TOTAL;
-}
-
+// ══════════════════════════════════════════════════════════════════
+// AGENTS
+// ══════════════════════════════════════════════════════════════════
+function agentRandom(car){const f=freeList();return f.length?f[Math.floor(Math.random()*f.length)]:TOTAL;}
 function agentGreedy(car){
-  let f=freeList(); if(!f.length) return TOTAL;
-  const {floor:tf,zone:tz}=SHOP_MAP[car.shop];
-  if(car.urgency==='Medical'){ const f1=f.filter(i=>idxToSpace(i).floor===1); if(f1.length)f=f1; }
+  let f=freeList();if(!f.length)return TOTAL;
+  const{floor:tf,zone:tz}=SHOP_MAP[car.shop];
+  if(car.urgency==='Medical'){const f1=f.filter(i=>idxToSpace(i).floor===1);if(f1.length)f=f1;}
   let best=f[0],bp=999,bf=999;
-  for(const i of f){ const {floor:af,zone:az}=idxToSpace(i); const p=proxScore(af,az,tf,tz); if(p<bp||(p===bp&&af<bf)){best=i;bp=p;bf=af;} }
+  for(const i of f){const{floor:af,zone:az}=idxToSpace(i);const p=proxScore(af,az,tf,tz);if(p<bp||(p===bp&&af<bf)){best=i;bp=p;bf=af;}}
   return best;
 }
-
 function agentRL(car){
-  let f=freeList(); if(!f.length) return TOTAL;
-  const {floor:tf,zone:tz}=SHOP_MAP[car.shop];
-  if(car.urgency==='Medical'){ const f1=f.filter(i=>idxToSpace(i).floor===1); if(f1.length)f=f1; }
-  // Floor load
-  const fl=[0,1,2].map(fi=>{ let c=0,s=fi*ZONES.length*SPZ; for(let i=s;i<s+ZONES.length*SPZ;i++)c+=occupancy[i]>0?1:0; return c/(ZONES.length*SPZ); });
+  let f=freeList();if(!f.length)return TOTAL;
+  const{floor:tf,zone:tz}=SHOP_MAP[car.shop];
+  if(car.urgency==='Medical'){const f1=f.filter(i=>idxToSpace(i).floor===1);if(f1.length)f=f1;}
+  const fl=[0,1,2].map(fi=>{let c=0,s=fi*ZONES.length*SPZ;for(let i=s;i<s+ZONES.length*SPZ;i++)c+=occupancy[i]>0?1:0;return c/(ZONES.length*SPZ);});
   let best=f[0],bs=-Infinity;
   for(const i of f){
-    const {floor:af,zone:az,slot}=idxToSpace(i);
-    const p=proxScore(af,az,tf,tz), nav=navTime(af,az,tf,tz);
-    let sc=0;
-    if(p<=2)sc+=5; else if(p===3)sc+=1; else sc-=3;
-    sc-=nav*0.03;
-    const op=fl[af-1]*100; if(op>80)sc-=(op-80)*0.05;
-    if(car.size==='Small'&&slot<10)sc+=2;
-    if(car.duration==='Short'&&(az==='North'||az==='East'))sc+=3;
-    sc+=(Math.random()-0.5)*0.3; // small policy noise
-    if(sc>bs){bs=sc;best=i;}
+    const{floor:af,zone:az,slot}=idxToSpace(i),p=proxScore(af,az,tf,tz),nav=navTime(af,az,tf,tz);
+    let sc=0;if(p<=2)sc+=5;else if(p===3)sc+=1;else sc-=3;
+    sc-=nav*.003;const op=fl[af-1]*100;if(op>80)sc-=(op-80)*.05;
+    if(car.size==='Small'&&slot<10)sc+=2;if(car.duration==='Short'&&(az==='North'||az==='East'))sc+=3;
+    sc+=(Math.random()-.5)*.3;if(sc>bs){bs=sc;best=i;}
   }
   return best;
 }
 
-// ── Reward ────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+// REWARD
+// ══════════════════════════════════════════════════════════════════
 function calcReward(action,car){
-  if(action===TOTAL) return {r:-5,nav:null,prox:null,floor:null,zone:null};
-  const {floor:af,zone:az,slot}=idxToSpace(action);
-  const {floor:tf,zone:tz}=SHOP_MAP[car.shop];
-  const p=proxScore(af,az,tf,tz), nav=navTime(af,az,tf,tz);
-  let r=0;
-  if(p<=2)r+=5; else if(p===3)r+=1; else r-=3;
-  r-=nav*0.03;
-  if(car.urgency==='Medical') r+=(af===1&&p<=2)?10:-8;
-  const spf=ZONES.length*SPZ, si=(af-1)*spf; let cnt=0;
-  for(let i=si;i<si+spf;i++) cnt+=occupancy[i]>0?1:0;
-  const op=cnt/spf*100; if(op>80)r-=(op-80)*0.05;
-  if(car.size==='Small'&&slot<10)r+=2;
-  if(car.duration==='Short'&&(az==='North'||az==='East'))r+=3;
-  return {r:Math.round(r*10)/10, nav, prox:p, floor:af, zone:az};
+  if(action===TOTAL)return{r:-5,nav:null,prox:null,floor:null,zone:null};
+  const{floor:af,zone:az,slot}=idxToSpace(action),{floor:tf,zone:tz}=SHOP_MAP[car.shop];
+  const p=proxScore(af,az,tf,tz),nav=navTime(af,az,tf,tz);
+  let r=0;if(p<=2)r+=5;else if(p===3)r+=1;else r-=3;
+  r-=nav*.003;if(car.urgency==='Medical')r+=(af===1&&p<=2)?10:-8;
+  const spf=ZONES.length*SPZ,si=(af-1)*spf;let cnt=0;
+  for(let i=si;i<si+spf;i++)cnt+=occupancy[i]>0?1:0;
+  const op=cnt/spf*100;if(op>80)r-=(op-80)*.05;
+  if(car.size==='Small'&&slot<10)r+=2;if(car.duration==='Short'&&(az==='North'||az==='East'))r+=3;
+  return{r:Math.round(r*10)/10,nav,prox:p,floor:af,zone:az};
 }
 
-// ── DOM ───────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+// BUILD DOM
+// ══════════════════════════════════════════════════════════════════
 function buildGrid(){
   const area=document.getElementById('carpark-area');
   area.innerHTML='';
   FLOORS.forEach(fl=>{
     const block=document.createElement('div');
     block.className='floor-block';
-    const zonesHTML=ZONES.map(z=>{
+    const zonesHTML=ZONES.map((z,zi)=>{
       const shops=ALL_SHOPS.filter(s=>SHOP_MAP[s].floor===fl&&SHOP_MAP[s].zone===z).join(', ');
       const spacesHTML=Array.from({length:SPZ},(_,s)=>`<div class="space empty" id="sp-${spaceIdx(fl,z,s)}"></div>`).join('');
-      return `<div class="zone-block"><div class="zone-label">${z}</div><div class="zone-shop">${shops}</div><div class="spaces-grid">${spacesHTML}</div></div>`;
+      const ret=zi===ZONES.length-1?`<div class="zone-aisle-return" id="ret-${fl}"></div>`:'';
+      return`<div class="zone-block"><div class="zone-aisle" id="aisle-${fl}-${z}"></div><div class="zone-inner"><div class="zone-label">${z}</div><div class="zone-shop">${shops}</div><div class="spaces-grid">${spacesHTML}</div></div>${ret}</div>`;
     }).join('');
+
+    let topHTML;
+    if(fl===1){
+      topHTML=`<div class="entry-row">
+        <div class="gate in">▶ Entry</div>
+        <div class="entry-road" id="entry-road-1"></div>
+        <div class="gate out">Exit ◀</div>
+      </div>`;
+    } else {
+      topHTML=`<div class="ramp-row" id="ramp-row-${fl}">
+        <div class="ramp-portal entry" id="ramp-entry-${fl}">↗ F${fl-1}</div>
+        <div class="ramp-road" id="ramp-road-${fl}"></div>
+        <div class="ramp-portal exit" id="ramp-exit-${fl}">F${fl-1} ↙</div>
+      </div>`;
+    }
+
     block.innerHTML=`<div class="floor-header">
-      <span class="floor-title">Floor ${fl}</span>
-      <div class="floor-bar-wrap"><div class="floor-bar" id="fbar-${fl}" style="width:0%"></div></div>
-      <span class="floor-occ" id="focc-${fl}">0% · 0/${ZONES.length*SPZ}</span>
-    </div><div class="zones-row">${zonesHTML}</div>`;
+        <span class="floor-title">Floor ${fl}</span>
+        <div class="floor-bar-wrap"><div class="floor-bar" id="fbar-${fl}" style="width:0%"></div></div>
+        <span class="floor-occ" id="focc-${fl}">0% · 0/${ZONES.length*SPZ}</span>
+      </div>
+      <div class="floor-map" id="fmap-${fl}">
+        ${topHTML}
+        <div class="main-road" id="road-${fl}"><span class="road-label">Floor ${fl}</span></div>
+        <div class="zones-row">${zonesHTML}</div>
+      </div>`;
     area.appendChild(block);
   });
 }
 
-function setSpaceClass(i, cls){
-  const el=document.getElementById(`sp-${i}`);
-  if(el) el.className='space '+cls;
+// ══════════════════════════════════════════════════════════════════
+// SPACE HELPERS
+// ══════════════════════════════════════════════════════════════════
+function setSpaceClass(i,cls){const el=document.getElementById(`sp-${i}`);if(el)el.className='space '+cls;}
+function flashSpace(i,isMed,gen){
+  // Bail if a newer animation generation has started (reset or agent-switch)
+  if(gen!==undefined&&gen!==animGen)return;
+  const g=animGen; // capture current gen for the follow-up timers
+  setSpaceClass(i,isMed?'flash-medical':'flash-assign');
+  setTimeout(()=>{if(animGen!==g)return;setSpaceClass(i,isMed?'occupied-medical':'occupied-fresh');},600);
+  setTimeout(()=>{if(animGen!==g)return;const el=document.getElementById(`sp-${i}`);if(el&&el.classList.contains('occupied-fresh'))setSpaceClass(i,'occupied');},8000);
 }
-
-function flashSpace(i, isMed){
-  const cls=isMed?'flash-medical':'flash-assign';
-  setSpaceClass(i, cls);
-  setTimeout(()=>{
-    // After flash, show as occupied
-    setSpaceClass(i, isMed?'occupied-medical':'occupied');
-  }, 600);
-}
-
-function clearTargetHighlight(){
-  if(!lastTargetFloor) return;
-  for(let s=0;s<SPZ;s++){
-    const i=spaceIdx(lastTargetFloor,lastTargetZone,s);
-    const el=document.getElementById(`sp-${i}`);
-    if(el && el.classList.contains('target')) el.classList.remove('target');
-  }
-}
-
-function highlightTargetZone(tf,tz,skipIdx){
-  for(let s=0;s<SPZ;s++){
-    const i=spaceIdx(tf,tz,s);
-    if(i===skipIdx) continue;
-    const el=document.getElementById(`sp-${i}`);
-    if(el && !occupancy[i]) el.classList.add('target');
-  }
-}
-
 function updateFloorBars(){
   FLOORS.forEach((fl,fi)=>{
-    const spf=ZONES.length*SPZ, si=fi*spf;
-    let cnt=0; for(let i=si;i<si+spf;i++) cnt+=occupancy[i]>0?1:0;
+    const spf=ZONES.length*SPZ,si=fi*spf;let cnt=0;
+    for(let i=si;i<si+spf;i++)cnt+=occupancy[i]>0?1:0;
     const pct=Math.round(cnt/spf*100);
     const bar=document.getElementById(`fbar-${fl}`);
-    if(bar){ bar.style.width=pct+'%'; bar.style.background=pct>80?'var(--red)':pct>60?'var(--amber)':'var(--accent)'; }
+    if(bar){bar.style.width=pct+'%';bar.style.background=pct>80?'var(--red)':pct>60?'var(--amber)':'var(--accent)';}
     const occ=document.getElementById(`focc-${fl}`);
-    if(occ) occ.textContent=`${pct}% · ${cnt}/${spf}`;
+    if(occ)occ.textContent=`${pct}% · ${cnt}/${spf}`;
   });
-  const total=Array.from(occupancy).filter(v=>v>0).length;
-  document.getElementById('m-occ').textContent=Math.round(total/TOTAL*100)+'%';
+  document.getElementById('m-occ').textContent=Math.round(Array.from(occupancy).filter(v=>v>0).length/TOTAL*100)+'%';
 }
 
-// ── Simulation step ───────────────────────────────────────────────────────
-function doStep(){
-  if(stepCount>=N_STEPS){ stopSim(); return; }
+// ══════════════════════════════════════════════════════════════════
+// ANIMATION GENERATION — bump on every reset/agent-switch so stale
+// setTimeout callbacks from old agents don't flash spaces or move dots
+// ══════════════════════════════════════════════════════════════════
+let animGen=0;
 
-  // 1. Tick down all occupied spaces — depart when counter hits 0
-  for(let i=0;i<TOTAL;i++){
-    if(occupancy[i]>0){
-      occupancy[i]--;
-      if(occupancy[i]===0){
-        isMedicalSpace[i]=0;
-        setSpaceClass(i,'departing');
-        setTimeout(()=>setSpaceClass(i,'empty'), 500);
-      }
-    }
+// ══════════════════════════════════════════════════════════════════
+// TELEPORT BURST — purple glow at a screen position
+// ══════════════════════════════════════════════════════════════════
+function spawnBurst(x,y){
+  const b=document.createElement('div');
+  b.className='teleport-burst';
+  b.style.left=x+'px';
+  b.style.top=y+'px';
+  document.body.appendChild(b);
+  setTimeout(()=>{if(b.parentNode)b.parentNode.removeChild(b);},500);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CAR ANIMATION
+//
+// Velocity during benchmark is pinned to speed-5 so cars complete
+// quickly and don't outlive an agent's 10-second window.
+// Every setTimeout captures the generation at spawn time and bails
+// if the generation has advanced (reset / agent switch).
+// ══════════════════════════════════════════════════════════════════
+function animateCar(targetIdx,isMed){
+  const myGen=animGen; // capture — if animGen changes, all our callbacks abort
+  const{floor:af,zone:az}=idxToSpace(targetIdx);
+  const dw=5,dh=3;
+  function R(id){const el=document.getElementById(id);return el?el.getBoundingClientRect():null;}
+
+  const er1=R('entry-road-1');
+  const mr=R(`road-${af}`);
+  const ai=R(`aisle-${af}-${az}`);
+  const sp=R(`sp-${targetIdx}`);
+  if(!er1||!mr||!ai||!sp)return;
+
+  // During benchmark use max velocity so cars finish before agent switches
+  const vel=benchActive?(0.14+4*0.12):carVelocity();
+  const cls='car-dot '+(isMed?'medical':'normal');
+
+  function animSegments(wps,dotEl,cb){
+    if(!dotEl||wps.length<2){if(cb)cb();return;}
+    if(animGen!==myGen){if(dotEl.parentNode)dotEl.parentNode.removeChild(dotEl);return;}
+    const segs=wps.slice(1).map((_,i)=>Math.max(15,dist2d(wps[i],wps[i+1])/vel));
+    dotEl.style.transition='none';
+    dotEl.style.left=wps[0].x+'px';dotEl.style.top=wps[0].y+'px';
+    let elapsed=0;
+    wps.slice(1).forEach((pt,i)=>{
+      const dur=segs[i];
+      setTimeout(()=>{
+        if(animGen!==myGen){if(dotEl.parentNode)dotEl.parentNode.removeChild(dotEl);return;}
+        dotEl.style.transition=`left ${dur}ms linear,top ${dur}ms linear`;
+        dotEl.style.left=pt.x+'px';dotEl.style.top=pt.y+'px';
+      },elapsed);
+      elapsed+=dur;
+    });
+    setTimeout(()=>{
+      if(animGen!==myGen){if(dotEl.parentNode)dotEl.parentNode.removeChild(dotEl);return;}
+      if(cb)cb();
+    },elapsed);
   }
-  // 1b. Background top-up: keep occupancy ≥ 60% (background cars, not agent decisions)
-  const curOcc = Array.from(occupancy).filter(v=>v>0).length;
-  if(curOcc < TOTAL * 0.60){
-    const needed = Math.floor(TOTAL*0.62) - curOcc;
-    const empties = [];
-    for(let i=0;i<TOTAL;i++) if(!occupancy[i]) empties.push(i);
-    for(let k=0;k<Math.min(needed,empties.length,4);k++){
-      const idx = empties[Math.floor(Math.random()*empties.length)];
+
+  if(af===1){
+    const wps=[
+      {x:er1.left+4,            y:er1.top+er1.height/2-dh},
+      {x:er1.right-6,           y:er1.top+er1.height/2-dh},
+      {x:ai.left+ai.width/2-dw, y:mr.top+mr.height/2-dh},
+      {x:ai.left+ai.width/2-dw, y:ai.top+3},
+      {x:ai.left+ai.width/2-dw, y:ai.bottom-3},
+      {x:sp.left+sp.width/2-dw, y:sp.top+sp.height/2-dh},
+    ];
+    const dot=document.createElement('div');
+    dot.className=cls;
+    document.body.appendChild(dot);
+    animSegments(wps,dot,()=>{
+      if(animGen!==myGen)return;
+      flashSpace(targetIdx,isMed,myGen);
+      setTimeout(()=>{if(dot.parentNode)dot.parentNode.removeChild(dot);},80);
+    });
+    return;
+  }
+
+  // Multi-floor with teleports
+  const dot=document.createElement('div');
+  dot.className=cls;
+  document.body.appendChild(dot);
+
+  function doFloorLeg(fromFloor,done){
+    if(animGen!==myGen){if(dot.parentNode)dot.parentNode.removeChild(dot);return;}
+
+    if(fromFloor>=af){
+      const re=R(`ramp-entry-${af}`);
+      const rr=R(`ramp-road-${af}`);
+      if(!re||!rr){done();return;}
+      const finalWps=[
+        {x:re.left+re.width/2,    y:re.top+re.height/2-dh},
+        {x:rr.right-4,            y:rr.top+rr.height/2-dh},
+        {x:ai.left+ai.width/2-dw, y:mr.top+mr.height/2-dh},
+        {x:ai.left+ai.width/2-dw, y:ai.top+3},
+        {x:ai.left+ai.width/2-dw, y:ai.bottom-3},
+        {x:sp.left+sp.width/2-dw, y:sp.top+sp.height/2-dh},
+      ];
+      animSegments(finalWps,dot,done);
+      return;
+    }
+
+    let legWps;
+    if(fromFloor===1){
+      const eR=R('entry-road-1');
+      if(!eR){done();return;}
+      legWps=[
+        {x:eR.left+4,  y:eR.top+eR.height/2-dh},
+        {x:eR.right-8, y:eR.top+eR.height/2-dh},
+      ];
+    } else {
+      const rr=R(`ramp-road-${fromFloor}`);
+      const re=R(`ramp-entry-${fromFloor}`);
+      if(!rr||!re){done();return;}
+      legWps=[
+        {x:re.left+re.width/2, y:re.top+re.height/2-dh},
+        {x:rr.right-8,         y:rr.top+rr.height/2-dh},
+      ];
+    }
+
+    animSegments(legWps,dot,()=>{
+      if(animGen!==myGen){if(dot.parentNode)dot.parentNode.removeChild(dot);return;}
+      const depPt=legWps[legWps.length-1];
+      spawnBurst(depPt.x+dw,depPt.y+dh);
+      dot.style.opacity='0';
+      dot.style.transition='opacity .15s';
+
+      setTimeout(()=>{
+        if(animGen!==myGen){if(dot.parentNode)dot.parentNode.removeChild(dot);return;}
+        const nextEntry=R(`ramp-entry-${fromFloor+1}`);
+        if(!nextEntry){dot.style.opacity='1';done();return;}
+        const ax=nextEntry.left+nextEntry.width/2;
+        const ay=nextEntry.top+nextEntry.height/2;
+        spawnBurst(ax,ay);
+        dot.style.transition='none';
+        dot.style.left=(ax-dw)+'px';
+        dot.style.top=(ay-dh)+'px';
+        setTimeout(()=>{
+          if(animGen!==myGen){if(dot.parentNode)dot.parentNode.removeChild(dot);return;}
+          dot.style.transition='opacity .15s';
+          dot.style.opacity='1';
+          setTimeout(()=>doFloorLeg(fromFloor+1,done),80);
+        },60);
+      },180);
+    });
+  }
+
+  doFloorLeg(1,()=>{
+    if(animGen!==myGen)return;
+    flashSpace(targetIdx,isMed,myGen);
+    setTimeout(()=>{if(dot.parentNode)dot.parentNode.removeChild(dot);},80);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ARRIVAL SYSTEM
+// ══════════════════════════════════════════════════════════════════
+function scheduleNextArrival(agentOverride){
+  if(!running)return;
+  const ag=agentOverride||mode;
+  const baseGap=2600/(speed*speed*.5+.5);
+  const gap=Math.max(100,-baseGap*Math.log(Math.random()+.001));
+  arrivalTimer=setTimeout(()=>{
+    if(!running)return;
+    const r=Math.random();
+    const burst=r<.50?1:r<.72?2:r<.86?3:r<.94?4:5;
+    for(let i=0;i<burst;i++) setTimeout(()=>processOneArrival(ag),i*110);
+    scheduleNextArrival(agentOverride);
+  },gap);
+}
+
+function processOneArrival(agentMode){
+  if(stepCount>=N_STEPS){stopSim();return;}
+  // Departures
+  const depGen=animGen;
+  for(let i=0;i<TOTAL;i++){
+    if(occupancy[i]>0){occupancy[i]--;if(occupancy[i]===0){isMedSpace[i]=0;setSpaceClass(i,'departing');setTimeout(()=>{if(animGen===depGen)setSpaceClass(i,'empty');},500);}}
+  }
+  // Fill
+  const curOcc=Array.from(occupancy).filter(v=>v>0).length;
+  if(curOcc<TOTAL*.55){
+    const needed=Math.floor(TOTAL*.58)-curOcc,empties=[];
+    for(let i=0;i<TOTAL;i++)if(!occupancy[i])empties.push(i);
+    for(let k=0;k<Math.min(needed,empties.length,3);k++){
+      const idx=empties[Math.floor(Math.random()*empties.length)];
       empties.splice(empties.indexOf(idx),1);
-      occupancy[idx] = 15 + Math.floor(Math.random()*30);
+      occupancy[idx]=15+Math.floor(Math.random()*30);
       setSpaceClass(idx,'occupied');
     }
   }
-
-  // 2. New car arrives
   const car=randomCar();
-  document.getElementById('car-shop').textContent=car.shop;
   const tgt=SHOP_MAP[car.shop];
+  const occRate=Array.from(occupancy).filter(v=>v>0).length/TOTAL;
+  const searchTime=occRate<.5?5.0:parseFloat((5.0+Math.pow((occRate-.4)*3.5,2.2)*10).toFixed(1));
+  let action;
+  if(agentMode==='rl')action=agentRL(car);
+  else if(agentMode==='greedy')action=agentGreedy(car);
+  else action=agentRandom(car);
+  const result=calcReward(action,car);
+  totalReward+=result.r;
+  if(action<TOTAL)searchTimes.push(searchTime);
+
+  document.getElementById('car-shop').textContent=car.shop;
   document.getElementById('car-tags').innerHTML=`
     <span class="tag tag-size">${car.size}</span>
     <span class="tag tag-dur">${car.duration}</span>
     <span class="tag tag-urg ${car.urgency==='Non-urgent'?'normal':''}">${car.urgency}</span>
     <span class="tag tag-target">F${tgt.floor} ${tgt.zone}</span>`;
 
-  // 3. Agent decides
-  const occAtDecision = Array.from(occupancy).filter(v=>v>0).length;
-  const occRate = occAtDecision / TOTAL;
-  // Search time: base 0.5 min, rises steeply above 70% occupancy
-  // At 60% occ → ~1.2 min, at 80% → ~3.5 min, at 95% → ~8 min
-  const searchTime = occRate < 0.5
-    ? 0.5
-    : parseFloat((0.5 + Math.pow((occRate - 0.4) * 3.5, 2.2)).toFixed(2));
-
-  let action;
-  if(mode==='rl') action=agentRL(car);
-  else if(mode==='greedy') action=agentGreedy(car);
-  else action=agentRandom(car);
-
-  const result=calcReward(action,car);
-  totalReward+=result.r;
-  if(action<TOTAL){ searchTimes.push(searchTime); }
-
-  // 4. Remove old target highlight, add new one
-  clearTargetHighlight();
-
   if(action<TOTAL){
-    const durSteps=DUR_STEPS[car.duration]||15;
-    occupancy[action]=durSteps;
-    isMedicalSpace[action]=car.urgency==='Medical'?1:0;
-    flashSpace(action, car.urgency==='Medical');
+    occupancy[action]=DUR_STEPS[car.duration]||15;
+    isMedSpace[action]=car.urgency==='Medical'?1:0;
+    animateCar(action,car.urgency==='Medical');
     assigned++;
-    if(result.nav!==null) navTimes.push(result.nav);
-    if(result.prox!==null) proxScores.push(result.prox);
-    if(car.urgency==='Medical'&&result.floor===1&&result.prox<=2) medicalServed++;
-    lastTargetFloor=tgt.floor; lastTargetZone=tgt.zone;
-    highlightTargetZone(tgt.floor, tgt.zone, action);
+    if(result.nav!==null)navTimes.push(result.nav);
+    if(result.prox!==null)proxScores.push(result.prox);
+    if(car.urgency==='Medical'&&result.floor===1&&result.prox<=2)medicalServed++;
   } else {
     rejected++;
-    lastTargetFloor=null; lastTargetZone=null;
   }
 
-  // 5. Decision panel
   const box=document.getElementById('decision-box');
   if(action===TOTAL){
-    box.innerHTML=`<div class="decision-space" style="color:var(--red)">REJECTED</div>
-      <div class="decision-row"><span>Free spaces</span><span>${freeList().length}</span></div>`;
+    box.innerHTML=`<div class="decision-space" style="color:var(--red)">REJECTED</div><div class="decision-row"><span>Free left</span><span>${freeList().length}</span></div>`;
   } else {
-    const {floor:af,zone:az,slot}=idxToSpace(action);
+    const{floor:af,zone:az,slot}=idxToSpace(action);
     box.innerHTML=`<div class="decision-space ${car.urgency==='Medical'?'medical':''}">F${af}-${az[0]}${String(slot+1).padStart(3,'0')}</div>
       <div class="decision-row"><span>Floor</span><span>${af}</span></div>
       <div class="decision-row"><span>Zone</span><span>${az}</span></div>
       <div class="decision-row"><span>Proximity</span><span>${result.prox}/5</span></div>
-      <div class="decision-row"><span>Est. walk</span><span>${result.nav?.toFixed(1)} min</span></div>
+      <div class="decision-row"><span>Est. walk</span><span>${result.nav?.toFixed(1)} mins</span></div>
       <div class="decision-row"><span>Free left</span><span>${freeList().length}</span></div>
-      <div class="decision-row"><span>Search time</span><span style='color:var(--amber)'>${searchTime.toFixed(1)} min</span></div>`;
+      <div class="decision-row"><span>Search time</span><span style='color:var(--amber)'>${searchTime.toFixed(1)} mins</span></div>`;
   }
-
-  // 6. Reward flash
   const rf=document.getElementById('reward-flash');
   rf.className='reward-flash '+(result.r>=0?'positive':'negative');
   rf.textContent=(result.r>=0?'+':'')+result.r.toFixed(1)+' pts';
-  setTimeout(()=>{rf.textContent='';rf.className='reward-flash';},1600);
+  setTimeout(()=>{rf.textContent='';rf.className='reward-flash';},1100);
 
-  // 7. Log
-  const logArea=document.getElementById('log-area');
-  const item=document.createElement('div');
+  const logArea=document.getElementById('log-area'),item=document.createElement('div');
   item.className='log-item';
   const t=`${String(hour).padStart(2,'0')}:${String(Math.floor(stepCount%60)).padStart(2,'0')}`;
   const isMed=car.urgency==='Medical';
   let sp,sc='log-space';
   if(action===TOTAL){sp='REJECT';sc+=' neg';}
-  else{ const {floor:af,zone:az,slot}=idxToSpace(action); sp=`F${af}-${az[0]}${String(slot+1).padStart(3,'0')}`; if(isMed)sc+=' med'; }
+  else{const{floor:af,zone:az,slot}=idxToSpace(action);sp=`F${af}-${az[0]}${String(slot+1).padStart(3,'0')}`;if(isMed)sc+=' med';}
   item.innerHTML=`<span class="log-time">${t}</span><span class="${sc}">${sp}</span>
-    <span class="log-text"><strong>${car.shop}</strong> · ${car.size}${isMed?' 🚨':''}${action<TOTAL?' ⏱'+searchTime.toFixed(1)+'m':''}</span>
+    <span class="log-text"><strong>${car.shop}</strong> · ${car.size}${isMed?' 🚨':''}${action<TOTAL?' ⏱'+searchTime.toFixed(1)+' mins':''}</span>
     <span class="log-reward ${result.r>=0?'pos':'neg'}">${result.r>=0?'+':''}${result.r.toFixed(1)}</span>`;
   logArea.insertBefore(item,logArea.firstChild);
-  if(logArea.children.length>80) logArea.removeChild(logArea.lastChild);
+  if(logArea.children.length>80)logArea.removeChild(logArea.lastChild);
 
-  // 8. Stats
   stepCount++;
   hour=8+Math.floor(stepCount/N_STEPS*14);
   updateFloorBars();
@@ -488,83 +790,228 @@ function doStep(){
   document.getElementById('h-nav').textContent=navTimes.length?(navTimes.reduce((a,b)=>a+b)/navTimes.length).toFixed(1):'—';
   document.getElementById('h-prox').textContent=proxScores.length?(proxScores.reduce((a,b)=>a+b)/proxScores.length).toFixed(1):'—';
   document.getElementById('h-reward').textContent=totalReward.toFixed(0);
-  const avgSearch=searchTimes.length?(searchTimes.reduce((a,b)=>a+b)/searchTimes.length).toFixed(1):'—';
-  document.getElementById('h-search').textContent=avgSearch;
-  document.getElementById('m-search').textContent=avgSearch;
+  const avgS=searchTimes.length?(searchTimes.reduce((a,b)=>a+b)/searchTimes.length).toFixed(1):'—';
+  document.getElementById('h-search').textContent=avgS;
+  document.getElementById('m-search').textContent=avgS;
   document.getElementById('m-assigned').textContent=assigned;
   document.getElementById('m-rejected').textContent=rejected;
   document.getElementById('m-medical').textContent=medicalServed;
 }
 
-// ── Controls ──────────────────────────────────────────────────────────────
-const SPEEDS=[900,450,200,90,35];
-function toggleSim(){ running?stopSim():startSim(); }
+// ══════════════════════════════════════════════════════════════════
+// CONTROLS
+// ══════════════════════════════════════════════════════════════════
+function toggleSim(){running?stopSim():startSim();}
 function startSim(){
   running=true;
   document.getElementById('btn-start').textContent='⏸ Pause';
   document.getElementById('btn-start').className='hbtn btn-secondary';
-  simInterval=setInterval(doStep,SPEEDS[speed-1]);
+  scheduleNextArrival();
 }
 function stopSim(){
   running=false;
   document.getElementById('btn-start').textContent='▶ Resume';
   document.getElementById('btn-start').className='hbtn btn-primary';
-  clearInterval(simInterval);
+  if(arrivalTimer){clearTimeout(arrivalTimer);arrivalTimer=null;}
 }
-function stepOnce(){ if(!running) doStep(); }
+function stepOnce(){
+  const burst=Math.floor(Math.random()*4)+2;
+  for(let i=0;i<burst;i++) setTimeout(()=>processOneArrival(mode),i*110);
+}
 function resetSim(){
-  stopSim();
-  occupancy=new Int32Array(TOTAL);
-  isMedicalSpace=new Uint8Array(TOTAL);
+  stopSim();cancelBenchmark();
+  animGen++; // invalidate all in-flight animation callbacks
+  document.querySelectorAll('.car-dot,.teleport-burst').forEach(d=>d.remove());
+  occupancy=new Int32Array(TOTAL);isMedSpace=new Uint8Array(TOTAL);
   stepCount=0;hour=8;totalReward=0;assigned=0;rejected=0;medicalServed=0;
-  navTimes=[];proxScores=[];searchTimes=[];lastAssigned=-1;lastTargetFloor=null;lastTargetZone=null;
+  navTimes=[];proxScores=[];searchTimes=[];
   document.getElementById('btn-start').textContent='▶ Start';
   document.getElementById('btn-start').className='hbtn btn-primary';
-  document.getElementById('reward-flash').textContent='';
-  document.getElementById('reward-flash').className='reward-flash';
+  document.getElementById('reward-flash').textContent='';document.getElementById('reward-flash').className='reward-flash';
   document.getElementById('log-area').innerHTML='';
   document.getElementById('decision-box').innerHTML='<div style="color:var(--muted);font-size:10px">Press Start…</div>';
-  document.getElementById('car-shop').textContent='—';
-  document.getElementById('car-tags').innerHTML='';
-  // Reset all spaces then prefill
-  for(let i=0;i<TOTAL;i++) setSpaceClass(i,'empty');
+  document.getElementById('car-shop').textContent='—';document.getElementById('car-tags').innerHTML='';
+  for(let i=0;i<TOTAL;i++)setSpaceClass(i,'empty');
   prefillParking();
   document.getElementById('clock').textContent='08:00';
-  ['h-assigned','h-nav','h-prox','h-reward','h-search','m-assigned','m-rejected','m-medical'].forEach(id=>{
-    document.getElementById(id).textContent=(id.includes('nav')||id.includes('prox')||id.includes('search'))?'—':'0';
-  });
-  document.getElementById('m-occ').textContent='0%';
-  document.getElementById('m-search').textContent='—';
+  ['h-assigned','h-nav','h-prox','h-reward','h-search','m-assigned','m-rejected','m-medical'].forEach(id=>{document.getElementById(id).textContent=(id.includes('nav')||id.includes('prox')||id.includes('search'))?'—':'0';});
+  document.getElementById('m-occ').textContent='0%';document.getElementById('m-search').textContent='—';
 }
 function setSpeed(v){
   speed=parseInt(v);
   document.getElementById('speed-label').textContent=`×${v}`;
-  if(running){clearInterval(simInterval);simInterval=setInterval(doStep,SPEEDS[speed-1]);}
+  if(running&&arrivalTimer){clearTimeout(arrivalTimer);arrivalTimer=null;scheduleNextArrival(benchActive?benchCurrentAgent:undefined);}
 }
-function setMode(m){
-  mode=m;
-  ['rl','greedy','random'].forEach(x=>document.getElementById(`btn-${x}`).classList.toggle('active',x===m));
+function setMode(m){mode=m;['rl','greedy','random'].forEach(x=>document.getElementById(`btn-${x}`).classList.toggle('active',x===m));}
+
+// ══════════════════════════════════════════════════════════════════
+// BENCHMARK — 10 seconds per agent, live simulation visible
+// ══════════════════════════════════════════════════════════════════
+let benchActive=false,benchCurrentAgent=null,benchTimer=null,benchRAF=null;
+let benchResults={},benchStartTime=0,benchAgentIdx=0;
+const BENCH_AGENTS=['rl','greedy','random'];
+const BENCH_LABELS={rl:'RL Agent',greedy:'Greedy',random:'Random'};
+const BENCH_DURATION=10000;
+
+function startBenchmark(){
+  if(benchActive)return;
+  stopSim();
+  benchActive=true;
+  benchResults={};benchAgentIdx=0;
+  document.getElementById('bench-panel').classList.add('show');
+  document.getElementById('bench-results').classList.remove('show');
+  document.getElementById('bench-cancel-btn').classList.remove('hidden');
+  document.getElementById('bench-running-block').style.display='';
+
+  // Highlight badge in header
+  const badge=document.getElementById('bench-badge');
+  badge.classList.add('show','rl');
+
+  runBenchAgent();
 }
 
-
-// ── Pre-fill parking lot to ~65% occupancy ───────────────────────────────
-function prefillParking(){
-  const target = Math.floor(TOTAL * 0.65);
-  const indices = Array.from({length:TOTAL},(_,i)=>i);
-  // Shuffle
-  for(let i=indices.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [indices[i],indices[j]]=[indices[j],indices[i]]; }
-  for(let k=0;k<target;k++){
-    const i=indices[k];
-    // Random long-ish stay so they don't all depart at once
-    occupancy[i] = 15 + Math.floor(Math.random()*40);
-    isMedicalSpace[i] = 0;
-    setSpaceClass(i,'occupied');
+function runBenchAgent(){
+  if(!benchActive||benchAgentIdx>=BENCH_AGENTS.length){
+    finishBenchmark();return;
   }
+  const agKey=BENCH_AGENTS[benchAgentIdx];
+  benchCurrentAgent=agKey;
+
+  // Reset sim state fresh for this agent
+  animGen++; // kill any in-flight animations from the previous agent
+  document.querySelectorAll('.car-dot,.teleport-burst').forEach(d=>d.remove());
+  occupancy=new Int32Array(TOTAL);isMedSpace=new Uint8Array(TOTAL);
+  stepCount=0;hour=8;totalReward=0;assigned=0;rejected=0;medicalServed=0;
+  navTimes=[];proxScores=[];searchTimes=[];
+  for(let i=0;i<TOTAL;i++)setSpaceClass(i,'empty');
+  prefillParking();
+
+  // Update bench UI
+  const lbl=document.getElementById('bench-agent-label');
+  lbl.className=`bench-agent-label ${agKey}`;
+  lbl.textContent=`● ${BENCH_LABELS[agKey]} — Round ${benchAgentIdx+1}/3`;
+
+  const bar=document.getElementById('bench-time-bar');
+  bar.className=`bench-time-bar ${agKey}`;
+  bar.style.width='0%';
+
+  // Update badge
+  const badge=document.getElementById('bench-badge');
+  badge.className=`bench-badge show ${agKey}`;
+  badge.textContent=`⏱ ${BENCH_LABELS[agKey].toUpperCase()}`;
+
+  // Highlight mode button
+  setMode(agKey);
+
+  benchStartTime=performance.now();
+
+  // Start fast arrivals
+  running=true;
+  scheduleNextArrival(agKey);
+
+  // RAF loop to update timer bar
+  function tick(){
+    if(!benchActive)return;
+    const el=performance.now()-benchStartTime;
+    const pct=Math.min(100,(el/BENCH_DURATION)*100);
+    document.getElementById('bench-time-bar').style.width=pct+'%';
+    document.getElementById('bench-timer-val').textContent=Math.max(0,((BENCH_DURATION-el)/1000)).toFixed(1);
+    document.getElementById('bl-pts').textContent=totalReward.toFixed(0);
+    document.getElementById('bl-assigned').textContent=assigned;
+    document.getElementById('bl-nav').textContent=navTimes.length?(navTimes.reduce((a,b)=>a+b)/navTimes.length).toFixed(1):'—';
+    if(el<BENCH_DURATION){
+      benchRAF=requestAnimationFrame(tick);
+    } else {
+      saveBenchResult(agKey);
+      benchAgentIdx++;
+      stopSim();
+      setTimeout(runBenchAgent,400);
+    }
+  }
+  benchRAF=requestAnimationFrame(tick);
+}
+
+function saveBenchResult(agKey){
+  const avgNav=navTimes.length?(navTimes.reduce((a,b)=>a+b)/navTimes.length):0;
+  const avgProx=proxScores.length?(proxScores.reduce((a,b)=>a+b)/proxScores.length):0;
+  const avgSearch=searchTimes.length?(searchTimes.reduce((a,b)=>a+b)/searchTimes.length):0;
+  benchResults[agKey]={
+    reward:Math.round(totalReward),assigned,rejected,medical:medicalServed,
+    avgNav:avgNav.toFixed(1),avgProx:avgProx.toFixed(2),avgSearch:avgSearch.toFixed(1)
+  };
+}
+
+function finishBenchmark(){
+  benchActive=false;benchCurrentAgent=null;
+  if(benchRAF){cancelAnimationFrame(benchRAF);benchRAF=null;}
+  document.getElementById('bench-running-block').style.display='none';
+  document.getElementById('bench-cancel-btn').classList.add('hidden');
+  document.getElementById('bench-badge').classList.remove('show');
+  setMode(mode); // restore original mode highlight
+
+  const valid=BENCH_AGENTS.filter(k=>benchResults[k]);
+  if(!valid.length)return;
+
+  const best={
+    reward:Math.max(...valid.map(k=>benchResults[k].reward)),
+    nav:Math.min(...valid.map(k=>parseFloat(benchResults[k].avgNav))),
+    search:Math.min(...valid.map(k=>parseFloat(benchResults[k].avgSearch))),
+    assigned:Math.max(...valid.map(k=>benchResults[k].assigned)),
+    medical:Math.max(...valid.map(k=>benchResults[k].medical)),
+  };
+
+  const rows=BENCH_AGENTS.map(k=>{
+    if(!benchResults[k])return'';
+    const r=benchResults[k];
+    const w=(v,bv)=>v===bv?'class="win"':'';
+    return`<tr class="${k}-r">
+      <td>${BENCH_LABELS[k]}</td>
+      <td ${w(r.reward,best.reward)}>${r.reward}</td>
+      <td ${w(parseFloat(r.avgNav),best.nav)}>${r.avgNav}</td>
+      <td ${w(parseFloat(r.avgSearch),best.search)}>${r.avgSearch}</td>
+      <td ${w(r.assigned,best.assigned)}>${r.assigned}</td>
+      <td ${w(r.medical,best.medical)}>${r.medical}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('bench-table').innerHTML=`
+    <thead><tr>
+      <th>Agent</th><th>Pts</th><th>Nav (m)</th><th>Search (m)</th><th>Assigned</th><th>Medical</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>`;
+  document.getElementById('bench-results').classList.add('show');
+}
+
+function cancelBenchmark(){
+  if(!benchActive)return;
+  benchActive=false;benchCurrentAgent=null;
+  if(benchRAF){cancelAnimationFrame(benchRAF);benchRAF=null;}
+  if(benchTimer){clearTimeout(benchTimer);benchTimer=null;}
+  animGen++; // kill in-flight animations
+  document.querySelectorAll('.car-dot,.teleport-burst').forEach(d=>d.remove());
+  stopSim();
+  document.getElementById('bench-panel').classList.remove('show');
+  document.getElementById('bench-badge').classList.remove('show');
+  setMode(mode);
+}
+
+function closeBenchmark(){
+  document.getElementById('bench-panel').classList.remove('show');
+  document.getElementById('bench-badge').classList.remove('show');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PRE-FILL
+// ══════════════════════════════════════════════════════════════════
+function prefillParking(){
+  const target=Math.floor(TOTAL*.65),indices=Array.from({length:TOTAL},(_,i)=>i);
+  for(let i=indices.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[indices[i],indices[j]]=[indices[j],indices[i]];}
+  for(let k=0;k<target;k++){const i=indices[k];occupancy[i]=15+Math.floor(Math.random()*40);isMedSpace[i]=0;setSpaceClass(i,'occupied');}
   updateFloorBars();
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────
 buildGrid();
+prefillParking();
 </script>
 </body>
 </html>
