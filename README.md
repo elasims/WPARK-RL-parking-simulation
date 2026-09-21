@@ -25,7 +25,18 @@ carpark_rl/
 
 ## Quick Start
 
-### 1. Install dependencies
+### 1. Requirements
+
+numpy
+pandas
+openpyxl
+gymnasium
+stable-baselines3
+torch
+tensorboard
+
+
+Install with:
 ```bash
 pip install numpy pandas openpyxl gymnasium stable-baselines3 torch tensorboard
 ```
