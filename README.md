@@ -8,6 +8,8 @@ cars to optimal parking spaces across a 3-floor, 4-zone mall car park.
 The primary objective is to minimise congestion and navigation time.
 
 ---
+<img width="639" height="304" alt="image" src="https://github.com/user-attachments/assets/f7bc0f33-ce74-4720-8722-7cbe6edc44a5" />
+---
 
 ## File Structure
 
@@ -140,6 +142,16 @@ Edit `REWARD_CONFIG` in `environment.py` to adjust the reward weights.
 Run `train.py` with different `--timesteps` values depending on convergence.
 The PPO hyperparameters in `train.py` are a solid default; increase
 `net_arch` to `[512, 512]` for more complex policies.
+
+## Pipeline
+```mermaid
+flowchart LR
+    A[Car arrives] --> B[Environment]
+    B -->|state: 368-dim obs| C[PPO Agent]
+    C -->|action: space 0-359 or reject| D[Assignment]
+    D --> E[Reward]
+    E -->|feedback| C
+```
 
 ## Results
 
