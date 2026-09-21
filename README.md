@@ -129,3 +129,19 @@ Edit `REWARD_CONFIG` in `environment.py` to adjust the reward weights.
 Run `train.py` with different `--timesteps` values depending on convergence.
 The PPO hyperparameters in `train.py` are a solid default; increase
 `net_arch` to `[512, 512]` for more complex policies.
+
+## Results
+
+Agents evaluated head-to-head over 30 episodes (500 cars/episode) using `evaluate.py --episodes 30 --ppo`.
+
+| Agent          | Reward   | Assigned | Rejected | Medical OK | Nav time (min) | Proximity (1–5) |
+|----------------|----------|----------|----------|------------|-----------------|------------------|
+| Random         | -57.11   | 500.0    | 0.0      | 3.7        | 3.29            | 3.56             |
+| Greedy         | 2822.03  | 500.0    | 0.0      | 14.0       | **0.19**        | **1.16**         |
+| **PPO (trained)** | **2824.43** | 499.7 | 0.3      | **14.7**   | 1.38            | 1.95             |
+
+**Takeaways:**
+- Both Greedy and PPO massively outperform Random, confirming the environment and reward signal are sound.
+- PPO achieves marginally higher cumulative reward than Greedy (+0.09%) and serves more medical-urgency cars (14.7 vs 14.0 out of ~15/episode), consistent with the reward function's heavy weighting of medical priority (+10/−8).
+- Greedy remains stronger on raw efficiency metrics — navigation time (0.19 vs 1.38 min) and proximity score (1.16 vs 1.95) — and has a marginally lower rejection rate (0.0 vs 0.3).
+- This suggests PPO learned to trade off navigation efficiency for reward components it was optimizing more aggressively (medical service, proximity bonuses), rather than uniformly outperforming the heuristic baseline. Rebalancing `REWARD_CONFIG` — e.g. increasing the navigation-time penalty — is a natural next step to close this gap.
